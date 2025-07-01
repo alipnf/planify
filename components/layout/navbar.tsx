@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 //dummy
-const isAuthenticated = true;
+const isAuthenticated = false;
 const user = {
   name: 'Alif',
 };
