@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { BookOpen, Save, LogOut, Menu, Plus, Settings } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -14,19 +15,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-//dummy
-const isAuthenticated = false;
-const user = {
-  name: 'Alif',
-};
-
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { data: session } = useSession();
 
-  const handleLogout = () => {
-    router.push('/');
+  const handleLogout = async () => {
+    await signOut({ redirectTo: '/' });
   };
+
+  const isAuthenticated = !!session;
+  const user = session?.user;
 
   const navigation = [
     { name: 'Semua Mata Kuliah', href: '/courses', icon: BookOpen },
@@ -81,13 +80,23 @@ export function Navbar() {
                         className="flex items-center space-x-2"
                       >
                         <Avatar className="h-8 w-8">
-                          <AvatarFallback>
-                            {user?.name?.charAt(0).toUpperCase() || 'U'}
-                          </AvatarFallback>
+                          {user?.image ? (
+                            <AvatarImage
+                              src={user.image}
+                              alt={
+                                (user.name as string) || (user.email as string)
+                              }
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <AvatarFallback>
+                              {user?.name?.charAt(0).toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          )}
                         </Avatar>
                         <div className="hidden sm:block text-left">
                           <div className="text-sm font-medium">
-                            {user?.name}
+                            {user?.name || user?.email}
                           </div>
                         </div>
                       </Button>
@@ -123,6 +132,7 @@ export function Navbar() {
                       <DropdownMenuItem>
                         <div className="flex items-center space-x-2 w-full">
                           <Avatar className="h-6 w-6">
+                            <AvatarImage></AvatarImage>
                             <AvatarFallback className="text-xs">
                               {user?.name?.charAt(0).toUpperCase() || 'U'}
                             </AvatarFallback>

@@ -8,11 +8,23 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
+import { signIn } from 'next-auth/react';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    try {
+      await signIn('google', { redirectTo: '/' });
+    } catch (error) {
+      console.error('Error signing in:', error);
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
@@ -30,7 +42,7 @@ export default function LoginPage() {
           <CardContent className="p-6">
             <Button
               variant="outline"
-              onClick={() => setIsGoogleLoading(true)}
+              onClick={handleGoogleSignIn}
               disabled={isGoogleLoading}
               className="w-full mb-4"
             >
