@@ -2,27 +2,119 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  User,
+  AlertCircle,
+  CheckCircle,
+} from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { signIn } from 'next-auth/react';
+import { createClient } from '@/lib/supabase/client';
 
-export default function RegisterUI() {
+export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState<{
+    type: 'error' | 'success';
+    text: string;
+  } | null>(null);
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
+    setMessage(null);
+    const supabase = createClient();
     try {
-      await signIn('google', { redirectTo: '/' });
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+      if (data.url) window.location.href = data.url;
     } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Gagal daftar dengan Google. Silakan coba lagi.',
+      });
       console.error('Error signing in:', error);
     } finally {
       setIsGoogleLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage(null);
+
+    // Validasi form
+    if (!name || !email || !password || !confirmPassword) {
+      setMessage({ type: 'error', text: 'Semua field harus diisi.' });
+      setIsLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setMessage({
+        type: 'error',
+        text: 'Konfirmasi password tidak sama dengan password.',
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setMessage({ type: 'error', text: 'Password minimal 6 karakter.' });
+      setIsLoading(false);
+      return;
+    }
+
+    const supabase = createClient();
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name },
+        },
+      });
+      if (error) {
+        if (error.message.includes('already registered')) {
+          setMessage({
+            type: 'error',
+            text: 'Email sudah terdaftar. Silakan gunakan email lain atau login.',
+          });
+        } else {
+          setMessage({ type: 'error', text: error.message });
+        }
+      } else {
+        setMessage({
+          type: 'success',
+          text: 'Pendaftaran berhasil! Cek email untuk konfirmasi akun.',
+        });
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Terjadi kesalahan. Silakan coba lagi.',
+      });
+      console.error('Error registering:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -38,6 +130,24 @@ export default function RegisterUI() {
 
         <Card className="shadow-sm">
           <CardContent className="p-5 space-y-5">
+            {/* Message Display */}
+            {message && (
+              <div
+                className={`p-3 rounded-lg border flex items-center gap-2 ${
+                  message.type === 'error'
+                    ? 'bg-red-50 border-red-200 text-red-800'
+                    : 'bg-green-50 border-green-200 text-green-800'
+                }`}
+              >
+                {message.type === 'error' ? (
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                )}
+                <span className="text-sm">{message.text}</span>
+              </div>
+            )}
+
             <Button
               variant="outline"
               onClick={handleGoogleSignIn}
@@ -85,7 +195,7 @@ export default function RegisterUI() {
               </div>
             </div>
 
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <Label htmlFor="name">Nama Lengkap</Label>
                 <div className="relative">
@@ -95,6 +205,9 @@ export default function RegisterUI() {
                     type="text"
                     placeholder="John Doe"
                     className="pl-9"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
                   />
                 </div>
               </div>
@@ -108,6 +221,9 @@ export default function RegisterUI() {
                     type="email"
                     placeholder="john@example.com"
                     className="pl-9"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                 </div>
               </div>
@@ -121,6 +237,10 @@ export default function RegisterUI() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     className="pl-9 pr-9"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
                   />
                   <Button
                     type="button"
@@ -147,6 +267,9 @@ export default function RegisterUI() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     className="pl-9 pr-9"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
                   />
                   <Button
                     type="button"
@@ -164,27 +287,40 @@ export default function RegisterUI() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full">
-                Buat Akun
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || isGoogleLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Mendaftar...</span>
+                  </div>
+                ) : (
+                  'Daftar Sekarang'
+                )}
               </Button>
             </form>
 
-            <p className="text-sm text-center text-muted-foreground">
-              Sudah punya akun?{' '}
-              <Link
-                href="/login"
-                className="text-primary font-medium hover:underline"
-              >
-                Masuk di sini
-              </Link>
-            </p>
+            <div className="mt-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                Sudah punya akun?{' '}
+                <Link
+                  href="/auth/login"
+                  className="text-primary font-medium hover:underline"
+                >
+                  Masuk sekarang
+                </Link>
+              </p>
+            </div>
           </CardContent>
         </Card>
 
         <div className="text-center">
           <Link
             href="/"
-            className="text-sm text-muted-foreground hover:underline"
+            className="text-sm text-muted-foreground hover:text-foreground"
           >
             ← Kembali ke halaman utama
           </Link>

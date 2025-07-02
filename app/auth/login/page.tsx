@@ -1,28 +1,97 @@
 'use client';
 
 import Link from 'next/link';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  CheckCircle,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState<{
+    type: 'error' | 'success';
+    text: string;
+  } | null>(null);
+  const router = useRouter();
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
+    setMessage(null);
+    const supabase = createClient();
     try {
-      await signIn('google', { redirectTo: '/' });
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+      if (data.url) window.location.href = data.url;
     } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Gagal login dengan Google. Silakan coba lagi.',
+      });
       console.error('Error signing in:', error);
     } finally {
       setIsGoogleLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage(null);
+
+    if (!email || !password) {
+      setMessage({ type: 'error', text: 'Email dan password harus diisi.' });
+      setIsLoading(false);
+      return;
+    }
+
+    const supabase = createClient();
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          setMessage({
+            type: 'error',
+            text: 'Email atau password salah. Silakan periksa kembali.',
+          });
+        } else {
+          setMessage({ type: 'error', text: error.message });
+        }
+      } else {
+        setMessage({ type: 'success', text: 'Login berhasil! Mengalihkan...' });
+        setTimeout(() => router.push('/'), 1000);
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Terjadi kesalahan. Silakan coba lagi.',
+      });
+      console.error('Error logging in:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -40,6 +109,24 @@ export default function LoginPage() {
 
         <Card className="border bg-card text-card-foreground shadow">
           <CardContent className="p-6">
+            {/* Message Display */}
+            {message && (
+              <div
+                className={`mb-4 p-3 rounded-lg border flex items-center gap-2 ${
+                  message.type === 'error'
+                    ? 'bg-red-50 border-red-200 text-red-800'
+                    : 'bg-green-50 border-green-200 text-green-800'
+                }`}
+              >
+                {message.type === 'error' ? (
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                )}
+                <span className="text-sm">{message.text}</span>
+              </div>
+            )}
+
             <Button
               variant="outline"
               onClick={handleGoogleSignIn}
@@ -87,7 +174,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -97,6 +184,9 @@ export default function LoginPage() {
                     type="email"
                     placeholder="john@example.com"
                     className="pl-9"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                 </div>
               </div>
@@ -110,6 +200,9 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     className="pl-9 pr-10"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
                   />
                   <Button
                     type="button"
@@ -127,7 +220,11 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || isGoogleLoading}
+              >
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -143,7 +240,7 @@ export default function LoginPage() {
               <p className="text-sm text-muted-foreground">
                 Belum punya akun?{' '}
                 <Link
-                  href="/register"
+                  href="/auth/register"
                   className="font-medium text-primary hover:underline"
                 >
                   Daftar sekarang

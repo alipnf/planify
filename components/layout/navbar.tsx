@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { BookOpen, Save, LogOut, Menu, Plus, Settings } from 'lucide-react';
-import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -14,18 +13,37 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+    });
+    // Optional: subscribe to auth changes
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
 
   const handleLogout = async () => {
-    await signOut({ redirectTo: '/' });
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setUser(null);
+    router.push('/auth/login');
   };
 
-  const isAuthenticated = !!session;
-  const user = session?.user;
+  const isAuthenticated = !!user;
 
   const navigation = [
     { name: 'Semua Mata Kuliah', href: '/courses', icon: BookOpen },
@@ -80,23 +98,21 @@ export function Navbar() {
                         className="flex items-center space-x-2"
                       >
                         <Avatar className="h-8 w-8">
-                          {user?.image ? (
+                          {user?.user_metadata?.avatar_url ? (
                             <AvatarImage
-                              src={user.image}
-                              alt={
-                                (user.name as string) || (user.email as string)
-                              }
+                              src={user.user_metadata.avatar_url}
+                              alt={user.user_metadata.full_name || user.email}
                               referrerPolicy="no-referrer"
                             />
                           ) : (
                             <AvatarFallback>
-                              {user?.name?.charAt(0).toUpperCase() || 'U'}
+                              {user?.user_metadata?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
                             </AvatarFallback>
                           )}
                         </Avatar>
                         <div className="hidden sm:block text-left">
                           <div className="text-sm font-medium">
-                            {user?.name || user?.email}
+                            {user?.user_metadata?.full_name || user?.email}
                           </div>
                         </div>
                       </Button>
@@ -132,12 +148,12 @@ export function Navbar() {
                       <DropdownMenuItem>
                         <div className="flex items-center space-x-2 w-full">
                           <Avatar className="h-6 w-6">
-                            <AvatarImage></AvatarImage>
+                            <AvatarImage src={user?.user_metadata?.avatar_url} />
                             <AvatarFallback className="text-xs">
-                              {user?.name?.charAt(0).toUpperCase() || 'U'}
+                              {user?.user_metadata?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-sm">{user?.name}</span>
+                          <span className="text-sm">{user?.user_metadata?.full_name || user?.email}</span>
                         </div>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
@@ -191,12 +207,12 @@ export function Navbar() {
               <>
                 {/* Desktop Auth Buttons */}
                 <div className="hidden md:flex space-x-2">
-                  <Link href="/login">
+                  <Link href="/auth/login">
                     <Button variant="ghost" className="text-sm">
                       Masuk
                     </Button>
                   </Link>
-                  <Link href="/register">
+                  <Link href="/auth/register">
                     <Button size="sm" className="text-sm">
                       Daftar
                     </Button>
@@ -213,7 +229,7 @@ export function Navbar() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
                       <div className="flex gap-2 w-full px-3 py-2">
-                        <Link href="/register" className="w-1/2">
+                        <Link href="/auth/register" className="w-1/2">
                           <Button
                             variant="outline"
                             size="sm"
@@ -222,7 +238,7 @@ export function Navbar() {
                             Daftar
                           </Button>
                         </Link>
-                        <Link href="/login" className="w-1/2">
+                        <Link href="/auth/login" className="w-1/2">
                           <Button size="sm" className="w-full">
                             Masuk
                           </Button>

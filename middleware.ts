@@ -1,6 +1,7 @@
-import { auth } from '@/lib/auth';
+import { NextResponse, NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
-export default auth((req) => {
+export async function middleware(req: NextRequest) {
   // List of protected routes
   const protectedRoutes = [
     '/courses',
@@ -14,13 +15,35 @@ export default auth((req) => {
     req.nextUrl.pathname.startsWith(route)
   );
 
-  // If accessing protected route without auth, redirect to login
-  if (isProtectedRoute && !req.auth) {
-    const loginUrl = new URL('/login', req.nextUrl.origin);
+  // Create Supabase client with cookies from request
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            req.cookies.set({ name, value, ...options });
+          });
+        },
+      },
+    }
+  );
+
+  // Refresh session and get user
+  const { data } = await supabase.auth.getUser();
+
+  if (isProtectedRoute && !data.user) {
+    const loginUrl = new URL('/auth/login', req.nextUrl.origin);
     loginUrl.searchParams.set('callbackUrl', req.nextUrl.pathname);
-    return Response.redirect(loginUrl);
+    return NextResponse.redirect(loginUrl);
   }
-});
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
