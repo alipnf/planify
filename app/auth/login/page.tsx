@@ -17,18 +17,39 @@ import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'Email harus diisi')
+    .email('Format email tidak valid'),
+  password: z
+    .string()
+    .min(1, 'Password harus diisi')
+    .min(6, 'Password minimal 6 karakter'),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [message, setMessage] = useState<{
     type: 'error' | 'success';
     text: string;
   } | null>(null);
   const router = useRouter();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
@@ -54,22 +75,14 @@ export default function LoginPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const onSubmit = async (data: LoginFormData) => {
     setMessage(null);
-
-    if (!email || !password) {
-      setMessage({ type: 'error', text: 'Email dan password harus diisi.' });
-      setIsLoading(false);
-      return;
-    }
 
     const supabase = createClient();
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: data.email,
+        password: data.password,
       });
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
@@ -90,53 +103,34 @@ export default function LoginPage() {
         text: 'Terjadi kesalahan. Silakan coba lagi.',
       });
       console.error('Error logging in:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground">
-            Selamat Datang Kembali
+    <div className="min-h-screen flex items-center justify-center bg-muted/50 p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Masuk ke Planify
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Masuk untuk melanjutkan ke akun Anda
+          <p className="text-gray-600">
+            Kelola jadwal kuliah Anda dengan mudah
           </p>
         </div>
 
-        <Card className="border bg-card text-card-foreground shadow">
+        <Card>
           <CardContent className="p-6">
-            {/* Message Display */}
-            {message && (
-              <div
-                className={`mb-4 p-3 rounded-lg border flex items-center gap-2 ${
-                  message.type === 'error'
-                    ? 'bg-red-50 border-red-200 text-red-800'
-                    : 'bg-green-50 border-green-200 text-green-800'
-                }`}
-              >
-                {message.type === 'error' ? (
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                ) : (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                )}
-                <span className="text-sm">{message.text}</span>
-              </div>
-            )}
-
+            {/* Google Sign In Button */}
             <Button
-              variant="outline"
               onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading}
+              variant="outline"
               className="w-full mb-4"
+              disabled={isSubmitting || isGoogleLoading}
             >
               {isGoogleLoading ? (
                 <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                  <span>Menghubungkan...</span>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                  <span>Masuk dengan Google...</span>
                 </div>
               ) : (
                 <>
@@ -158,23 +152,37 @@ export default function LoginPage() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  Lanjutkan dengan Google
+                  Masuk dengan Google
                 </>
               )}
             </Button>
 
-            <div className="relative mb-4">
-              <div className="absolute inset-0 flex items-center">
-                <Separator />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">
-                  Atau lanjutkan dengan email
-                </span>
-              </div>
+            <div className="relative my-4">
+              <Separator />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-sm text-muted-foreground">
+                atau
+              </span>
             </div>
 
-            <form className="space-y-4" onSubmit={handleSubmit}>
+            {/* Error/Success Message */}
+            {message && (
+              <div
+                className={`mb-4 p-3 rounded-md flex items-center space-x-2 ${
+                  message.type === 'error'
+                    ? 'bg-red-50 text-red-700 border border-red-200'
+                    : 'bg-green-50 text-green-700 border border-green-200'
+                }`}
+              >
+                {message.type === 'error' ? (
+                  <AlertCircle className="h-4 w-4" />
+                ) : (
+                  <CheckCircle className="h-4 w-4" />
+                )}
+                <span className="text-sm">{message.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -182,13 +190,14 @@ export default function LoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="john@example.com"
+                    placeholder="nama@contoh.com"
                     className="pl-9"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
+                    {...register('email')}
                   />
                 </div>
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -200,9 +209,7 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     className="pl-9 pr-10"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
+                    {...register('password')}
                   />
                   <Button
                     type="button"
@@ -218,14 +225,17 @@ export default function LoginPage() {
                     )}
                   </Button>
                 </div>
+                {errors.password && (
+                  <p className="text-sm text-red-600">{errors.password.message}</p>
+                )}
               </div>
 
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isLoading || isGoogleLoading}
+                disabled={isSubmitting || isGoogleLoading}
               >
-                {isLoading ? (
+                {isSubmitting ? (
                   <div className="flex items-center space-x-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     <span>Masuk...</span>
@@ -236,28 +246,26 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                Belum punya akun?{' '}
-                <Link
-                  href="/auth/register"
-                  className="font-medium text-primary hover:underline"
-                >
-                  Daftar sekarang
-                </Link>
-              </p>
+            <div className="mt-4 text-center text-sm">
+              <span className="text-muted-foreground">Belum punya akun? </span>
+              <Link
+                href="/auth/register"
+                className="font-medium text-primary hover:underline"
+              >
+                Daftar di sini
+              </Link>
+            </div>
+
+            <div className="mt-2 text-center text-sm">
+              <Link
+                href="/"
+                className="text-muted-foreground hover:text-primary hover:underline"
+              >
+                ← Kembali ke beranda
+              </Link>
             </div>
           </CardContent>
         </Card>
-
-        <div className="text-center">
-          <Link
-            href="/"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            ← Kembali ke halaman utama
-          </Link>
-        </div>
       </div>
     </div>
   );

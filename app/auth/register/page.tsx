@@ -17,20 +17,53 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { createClient } from '@/lib/supabase/client';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const registerSchema = z
+  .object({
+    name: z
+      .string()
+      .min(1, 'Nama harus diisi')
+      .min(2, 'Nama minimal 2 karakter')
+      .max(50, 'Nama maksimal 50 karakter'),
+    email: z
+      .string()
+      .min(1, 'Email harus diisi')
+      .email('Format email tidak valid'),
+    password: z
+      .string()
+      .min(1, 'Password harus diisi')
+      .min(6, 'Password minimal 6 karakter')
+      .max(100, 'Password maksimal 100 karakter'),
+    confirmPassword: z
+      .string()
+      .min(1, 'Konfirmasi password harus diisi'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Konfirmasi password tidak sama dengan password',
+    path: ['confirmPassword'],
+  });
+
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState<{
     type: 'error' | 'success';
     text: string;
   } | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+  });
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
@@ -56,40 +89,16 @@ export default function RegisterPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const onSubmit = async (data: RegisterFormData) => {
     setMessage(null);
-
-    // Validasi form
-    if (!name || !email || !password || !confirmPassword) {
-      setMessage({ type: 'error', text: 'Semua field harus diisi.' });
-      setIsLoading(false);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setMessage({
-        type: 'error',
-        text: 'Konfirmasi password tidak sama dengan password.',
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      setMessage({ type: 'error', text: 'Password minimal 6 karakter.' });
-      setIsLoading(false);
-      return;
-    }
 
     const supabase = createClient();
     try {
       const { error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: data.email,
+        password: data.password,
         options: {
-          data: { full_name: name },
+          data: { full_name: data.name },
         },
       });
       if (error) {
@@ -113,51 +122,34 @@ export default function RegisterPage() {
         text: 'Terjadi kesalahan. Silakan coba lagi.',
       });
       console.error('Error registering:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-muted flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground">Buat Akun</h1>
-          <p className="text-sm text-muted-foreground">
-            Mulai merencanakan jadwal kuliah
+    <div className="min-h-screen flex items-center justify-center bg-muted/50 p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Daftar ke Planify
+          </h1>
+          <p className="text-gray-600">
+            Mulai kelola jadwal kuliah Anda dengan mudah
           </p>
         </div>
 
-        <Card className="shadow-sm">
-          <CardContent className="p-5 space-y-5">
-            {/* Message Display */}
-            {message && (
-              <div
-                className={`p-3 rounded-lg border flex items-center gap-2 ${
-                  message.type === 'error'
-                    ? 'bg-red-50 border-red-200 text-red-800'
-                    : 'bg-green-50 border-green-200 text-green-800'
-                }`}
-              >
-                {message.type === 'error' ? (
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                ) : (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                )}
-                <span className="text-sm">{message.text}</span>
-              </div>
-            )}
-
+        <Card>
+          <CardContent className="p-6">
+            {/* Google Sign In Button */}
             <Button
-              variant="outline"
               onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading}
-              className="w-full mb-5"
+              variant="outline"
+              className="w-full mb-4"
+              disabled={isSubmitting || isGoogleLoading}
             >
               {isGoogleLoading ? (
                 <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                  <span>Menghubungkan...</span>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                  <span>Daftar dengan Google...</span>
                 </div>
               ) : (
                 <>
@@ -179,23 +171,37 @@ export default function RegisterPage() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  Lanjutkan dengan Google
+                  Daftar dengan Google
                 </>
               )}
             </Button>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  atau lanjutkan dengan email
-                </span>
-              </div>
+            <div className="relative my-4">
+              <Separator />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-sm text-muted-foreground">
+                atau
+              </span>
             </div>
 
-            <form className="space-y-4" onSubmit={handleSubmit}>
+            {/* Error/Success Message */}
+            {message && (
+              <div
+                className={`mb-4 p-3 rounded-md flex items-center space-x-2 ${
+                  message.type === 'error'
+                    ? 'bg-red-50 text-red-700 border border-red-200'
+                    : 'bg-green-50 text-green-700 border border-green-200'
+                }`}
+              >
+                {message.type === 'error' ? (
+                  <AlertCircle className="h-4 w-4" />
+                ) : (
+                  <CheckCircle className="h-4 w-4" />
+                )}
+                <span className="text-sm">{message.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nama Lengkap</Label>
                 <div className="relative">
@@ -203,13 +209,14 @@ export default function RegisterPage() {
                   <Input
                     id="name"
                     type="text"
-                    placeholder="John Doe"
+                    placeholder="Masukkan nama lengkap"
                     className="pl-9"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
+                    {...register('name')}
                   />
                 </div>
+                {errors.name && (
+                  <p className="text-sm text-red-600">{errors.name.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -219,13 +226,14 @@ export default function RegisterPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="john@example.com"
+                    placeholder="nama@contoh.com"
                     className="pl-9"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
+                    {...register('email')}
                   />
                 </div>
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -236,18 +244,15 @@ export default function RegisterPage() {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
-                    className="pl-9 pr-9"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
+                    className="pl-9 pr-10"
+                    {...register('password')}
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => setShowPassword((prev) => !prev)}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -256,6 +261,9 @@ export default function RegisterPage() {
                     )}
                   </Button>
                 </div>
+                {errors.password && (
+                  <p className="text-sm text-red-600">{errors.password.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -266,17 +274,15 @@ export default function RegisterPage() {
                     id="confirmPassword"
                     type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="••••••••"
-                    className="pl-9 pr-9"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
+                    className="pl-9 pr-10"
+                    {...register('confirmPassword')}
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
                   >
                     {showConfirmPassword ? (
                       <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -285,46 +291,49 @@ export default function RegisterPage() {
                     )}
                   </Button>
                 </div>
+                {errors.confirmPassword && (
+                  <p className="text-sm text-red-600">
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
               </div>
 
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isLoading || isGoogleLoading}
+                disabled={isSubmitting || isGoogleLoading}
               >
-                {isLoading ? (
+                {isSubmitting ? (
                   <div className="flex items-center space-x-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     <span>Mendaftar...</span>
                   </div>
                 ) : (
-                  'Daftar Sekarang'
+                  'Daftar'
                 )}
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                Sudah punya akun?{' '}
-                <Link
-                  href="/auth/login"
-                  className="text-primary font-medium hover:underline"
-                >
-                  Masuk sekarang
-                </Link>
-              </p>
+            <div className="mt-4 text-center text-sm">
+              <span className="text-muted-foreground">Sudah punya akun? </span>
+              <Link
+                href="/auth/login"
+                className="font-medium text-primary hover:underline"
+              >
+                Masuk di sini
+              </Link>
+            </div>
+
+            <div className="mt-2 text-center text-sm">
+              <Link
+                href="/"
+                className="text-muted-foreground hover:text-primary hover:underline"
+              >
+                ← Kembali ke beranda
+              </Link>
             </div>
           </CardContent>
         </Card>
-
-        <div className="text-center">
-          <Link
-            href="/"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            ← Kembali ke halaman utama
-          </Link>
-        </div>
       </div>
     </div>
   );
