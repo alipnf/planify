@@ -107,7 +107,7 @@ export default function Home() {
           <p className="text-xl text-muted-foreground mb-8">
             Mulai merencanakan KRS dengan mudah menggunakan bantuan AI
           </p>
-          <Link href="/register">
+          <Link href="/auth/register">
             <Button size="lg" className="px-10 py-4 text-lg">
               <GraduationCap className="mr-2 h-6 w-6" />
               Daftar Gratis Sekarang

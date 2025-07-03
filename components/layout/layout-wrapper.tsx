@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { Toaster } from 'sonner';
 import { Navbar } from './navbar';
 import { Footer } from './footer';
 
@@ -18,6 +19,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       {!isAuthPage && <Navbar />}
       {children}
       {!isAuthPage && <Footer />}
+      <Toaster position="top-right" expand={true} />
     </>
   );
 }

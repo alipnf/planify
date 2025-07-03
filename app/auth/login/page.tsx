@@ -13,12 +13,6 @@ import { AuthLayout, AuthSeparator } from '@/components/auth/auth-layout';
 import { PasswordInput } from '@/components/ui/password-input';
 import { FormField } from '@/components/ui/form-field';
 import { loginSchema, type LoginFormData } from '@/lib/schemas/auth';
-import {
-  AUTH_ERRORS,
-  FORM_LABELS,
-  FORM_PLACEHOLDERS,
-  BUTTON_TEXTS,
-} from '@/lib/constants/auth';
 
 export default function LoginPage() {
   const { message, showError, showSuccess, clearMessage } = useMessage();
@@ -43,16 +37,16 @@ export default function LoginPage() {
       });
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
-          showError(AUTH_ERRORS.INVALID_CREDENTIALS);
+          showError('Email atau password salah. Silakan periksa kembali.');
         } else {
           showError(error.message);
         }
       } else {
-        showSuccess(AUTH_ERRORS.LOGIN_SUCCESS);
+        showSuccess('Login berhasil! Mengalihkan...');
         setTimeout(() => router.push('/'), 1000);
       }
     } catch (error) {
-      showError(AUTH_ERRORS.GENERAL_ERROR);
+      showError('Terjadi kesalahan. Silakan coba lagi.');
       console.error('Error logging in:', error);
     }
   };
@@ -66,8 +60,8 @@ export default function LoginPage() {
       footerLinkHref="/auth/register"
     >
       <GoogleSignInButton
-        text={BUTTON_TEXTS.GOOGLE_LOGIN}
-        loadingText={BUTTON_TEXTS.GOOGLE_LOGIN_LOADING}
+        text="Masuk dengan Google"
+        loadingText="Masuk dengan Google..."
         disabled={isSubmitting}
         onError={showError}
       />
@@ -79,9 +73,9 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           id="email"
-          label={FORM_LABELS.EMAIL}
+          label="Email"
           type="email"
-          placeholder={FORM_PLACEHOLDERS.EMAIL}
+          placeholder="nama@contoh.com"
           icon={Mail}
           error={errors.email?.message}
           {...register('email')}
@@ -89,7 +83,7 @@ export default function LoginPage() {
 
         <PasswordInput
           id="password"
-          label={FORM_LABELS.PASSWORD}
+          label="Kata Sandi"
           error={errors.password?.message}
           {...register('password')}
         />
@@ -98,10 +92,10 @@ export default function LoginPage() {
           {isSubmitting ? (
             <div className="flex items-center space-x-2">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              <span>{BUTTON_TEXTS.LOGIN_LOADING}</span>
+              <span>Masuk...</span>
             </div>
           ) : (
-            BUTTON_TEXTS.LOGIN
+            'Masuk'
           )}
         </Button>
       </form>

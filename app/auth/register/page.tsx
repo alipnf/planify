@@ -12,12 +12,6 @@ import { AuthLayout, AuthSeparator } from '@/components/auth/auth-layout';
 import { PasswordInput } from '@/components/ui/password-input';
 import { FormField } from '@/components/ui/form-field';
 import { registerSchema, type RegisterFormData } from '@/lib/schemas/auth';
-import {
-  AUTH_ERRORS,
-  FORM_LABELS,
-  FORM_PLACEHOLDERS,
-  BUTTON_TEXTS,
-} from '@/lib/constants/auth';
 
 export default function RegisterPage() {
   const { message, showError, showSuccess, clearMessage } = useMessage();
@@ -44,15 +38,17 @@ export default function RegisterPage() {
       });
       if (error) {
         if (error.message.includes('already registered')) {
-          showError(AUTH_ERRORS.EMAIL_EXISTS);
+          showError(
+            'Email sudah terdaftar. Silakan gunakan email lain atau login.'
+          );
         } else {
           showError(error.message);
         }
       } else {
-        showSuccess(AUTH_ERRORS.REGISTRATION_SUCCESS);
+        showSuccess('Pendaftaran berhasil! Cek email untuk konfirmasi akun.');
       }
     } catch (error) {
-      showError(AUTH_ERRORS.GENERAL_ERROR);
+      showError('Terjadi kesalahan. Silakan coba lagi.');
       console.error('Error registering:', error);
     }
   };
@@ -66,8 +62,8 @@ export default function RegisterPage() {
       footerLinkHref="/auth/login"
     >
       <GoogleSignInButton
-        text={BUTTON_TEXTS.GOOGLE_REGISTER}
-        loadingText={BUTTON_TEXTS.GOOGLE_REGISTER_LOADING}
+        text="Daftar dengan Google"
+        loadingText="Daftar dengan Google..."
         disabled={isSubmitting}
         onError={showError}
       />
@@ -79,9 +75,9 @@ export default function RegisterPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           id="name"
-          label={FORM_LABELS.FULL_NAME}
+          label="Nama Lengkap"
           type="text"
-          placeholder={FORM_PLACEHOLDERS.FULL_NAME}
+          placeholder="Masukkan nama lengkap"
           icon={User}
           error={errors.name?.message}
           {...register('name')}
@@ -89,9 +85,9 @@ export default function RegisterPage() {
 
         <FormField
           id="email"
-          label={FORM_LABELS.EMAIL}
+          label="Email"
           type="email"
-          placeholder={FORM_PLACEHOLDERS.EMAIL}
+          placeholder="nama@contoh.com"
           icon={Mail}
           error={errors.email?.message}
           {...register('email')}
@@ -99,14 +95,14 @@ export default function RegisterPage() {
 
         <PasswordInput
           id="password"
-          label={FORM_LABELS.PASSWORD}
+          label="Kata Sandi"
           error={errors.password?.message}
           {...register('password')}
         />
 
         <PasswordInput
           id="confirmPassword"
-          label={FORM_LABELS.CONFIRM_PASSWORD}
+          label="Konfirmasi Kata Sandi"
           error={errors.confirmPassword?.message}
           {...register('confirmPassword')}
         />
@@ -115,10 +111,10 @@ export default function RegisterPage() {
           {isSubmitting ? (
             <div className="flex items-center space-x-2">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              <span>{BUTTON_TEXTS.REGISTER_LOADING}</span>
+              <span>Mendaftar...</span>
             </div>
           ) : (
-            BUTTON_TEXTS.REGISTER
+            'Daftar'
           )}
         </Button>
       </form>
