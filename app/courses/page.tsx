@@ -68,6 +68,8 @@ export default function CoursesPage() {
               onBulkDelete={courseManagement.handleBulkDeleteClick}
               allSelected={courseManagement.allSelected}
               someSelected={courseManagement.someSelected}
+              groupByCode={courseManagement.groupByCode}
+              groupedCourses={courseManagement.groupedCourses}
             />
           )}
         </div>

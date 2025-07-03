@@ -99,7 +99,8 @@ export function useCourseManagement(): CourseManagementState &
   // Load courses on mount
   useEffect(() => {
     loadCourses();
-  }, []); // Add empty dependency array to only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Computed values
   const filteredCourses = useMemo(() => {
@@ -116,11 +117,13 @@ export function useCourseManagement(): CourseManagementState &
     if (!groupByCode) return null;
 
     const grouped = groupCoursesByCode(filteredCourses);
-    return Object.entries(grouped).map(([code, coursesInGroup]) => ({
-      code,
-      courses: sortCourseClasses(coursesInGroup),
-      totalClasses: coursesInGroup.length,
-    }));
+    return Object.entries(grouped)
+      .map(([code, coursesInGroup]) => ({
+        code,
+        courses: sortCourseClasses(coursesInGroup),
+        totalClasses: coursesInGroup.length,
+      }))
+      .sort((a, b) => a.code.localeCompare(b.code));
   }, [filteredCourses, groupByCode]);
 
   const availableClasses = useMemo(() => {
@@ -150,7 +153,7 @@ export function useCourseManagement(): CourseManagementState &
     try {
       setIsLoading(true);
       // Add small delay to allow authentication to initialize properly
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       const data = await coursesService.getAllCourses();
       setCourses(data);
     } catch (error) {
@@ -159,7 +162,7 @@ export function useCourseManagement(): CourseManagementState &
       if (courses.length === 0) {
         // Retry once after a delay
         try {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise((resolve) => setTimeout(resolve, 1000));
           const data = await coursesService.getAllCourses();
           setCourses(data);
         } catch (retryError) {
@@ -231,7 +234,7 @@ export function useCourseManagement(): CourseManagementState &
     const today = new Date().toLocaleDateString('id-ID', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     });
     toast.success(`${courses.length} mata kuliah berhasil diekspor (${today})`);
   }, [courses]);
