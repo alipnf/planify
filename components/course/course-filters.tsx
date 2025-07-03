@@ -45,27 +45,24 @@ export function CourseFilters({
       <CardContent className="p-6">
         <div className="space-y-4">
           {/* Main Controls Row */}
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search and Filters - Left Side */}
-            <div className="flex flex-col sm:flex-row gap-3 flex-1">
-              {/* Search Input */}
-              <div className="relative flex-1 min-w-0">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            {/* Search and Filters */}
+            <div className="flex flex-1 flex-col gap-3 sm:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
                   placeholder="Cari mata kuliah..."
                   value={searchQuery}
                   onChange={(e) => onSearchChange(e.target.value)}
-                  className="pl-9 h-10"
+                  className="h-10 w-full pl-9"
                 />
               </div>
-
-              {/* Semester Filter */}
-              <div className="w-full sm:w-48">
+              <div className="grid grid-cols-2 gap-3 sm:flex">
                 <Select
                   value={selectedSemester}
                   onValueChange={onSemesterChange}
                 >
-                  <SelectTrigger className="h-10 px-3">
+                  <SelectTrigger className="h-10 w-full sm:w-48">
                     <SelectValue placeholder="Pilih Semester" />
                   </SelectTrigger>
                   <SelectContent>
@@ -77,12 +74,8 @@ export function CourseFilters({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-
-              {/* Class Filter */}
-              <div className="w-full sm:w-32">
                 <Select value={selectedClass} onValueChange={onClassChange}>
-                  <SelectTrigger className="h-10 px-3">
+                  <SelectTrigger className="h-10 w-full sm:w-40">
                     <SelectValue placeholder="Kelas" />
                   </SelectTrigger>
                   <SelectContent>
@@ -97,34 +90,32 @@ export function CourseFilters({
               </div>
             </div>
 
-            {/* Action Buttons - Right Side */}
-            <div className="flex flex-wrap gap-2 lg:flex-nowrap">
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
               <Button
                 variant="outline"
                 onClick={onExport}
                 size="sm"
-                className="h-10 px-3"
+                className="h-10 w-full px-3 sm:w-auto"
               >
-                <Upload className="h-4 w-4 mr-1" />
+                <Upload className="mr-1 h-4 w-4" />
                 Export
               </Button>
-
               <Button
                 variant="outline"
                 onClick={onImport}
                 size="sm"
-                className="h-10 px-3"
+                className="h-10 w-full px-3 sm:w-auto"
               >
-                <Download className="h-4 w-4 mr-1" />
+                <Download className="mr-1 h-4 w-4" />
                 Import
               </Button>
-
               <Button
                 onClick={onAddCourse}
-                className="bg-primary h-10 px-4"
+                className="col-span-2 h-10 w-full bg-primary px-4 sm:col-auto sm:w-auto"
                 size="sm"
               >
-                <Plus className="h-4 w-4 mr-1" />
+                <Plus className="mr-1 h-4 w-4" />
                 Tambah
               </Button>
             </div>
