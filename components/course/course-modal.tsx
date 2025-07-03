@@ -1,0 +1,393 @@
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+import { toast } from 'sonner';
+import { Course } from '@/lib/types/course';
+
+const courseSchema = z.object({
+  code: z
+    .string()
+    .min(5, 'Kode mata kuliah minimal 5 karakter')
+    .max(10, 'Kode mata kuliah maksimal 10 karakter'),
+  name: z
+    .string()
+    .min(3, 'Nama mata kuliah minimal 3 karakter')
+    .max(100, 'Nama mata kuliah maksimal 100 karakter'),
+  lecturer: z
+    .string()
+    .min(3, 'Nama dosen minimal 3 karakter')
+    .max(50, 'Nama dosen maksimal 50 karakter'),
+  credits: z.number().min(1, 'SKS minimal 1').max(20, 'SKS maksimal 20'),
+  room: z
+    .string()
+    .min(2, 'Ruang minimal 2 karakter')
+    .max(20, 'Ruang maksimal 20 karakter'),
+  day: z.string().min(1, 'Pilih hari'),
+  startTime: z.string().min(1, 'Pilih jam mulai'),
+  endTime: z.string().min(1, 'Pilih jam selesai'),
+  semester: z.string().min(1, 'Pilih semester'),
+  category: z.enum(['wajib', 'pilihan'], { required_error: 'Pilih kategori' }),
+  class: z
+    .string()
+    .min(1, 'Kelas harus diisi')
+    .max(5, 'Kelas maksimal 5 karakter'),
+});
+
+type CourseForm = z.infer<typeof courseSchema>;
+
+interface CourseModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  course?: Course | null;
+  onSave: (course: Partial<Course>) => void;
+}
+
+export function CourseModal({
+  open,
+  onOpenChange,
+  course,
+  onSave,
+}: CourseModalProps) {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<CourseForm>({
+    resolver: zodResolver(courseSchema),
+  });
+
+  const watchedValues = watch();
+
+  useEffect(() => {
+    if (course) {
+      // Pre-fill form with course data
+      setValue('code', course.code);
+      setValue('name', course.name);
+      setValue('lecturer', course.lecturer);
+      setValue('credits', course.credits);
+      setValue('room', course.room);
+      setValue('day', course.day);
+      setValue('startTime', course.startTime);
+      setValue('endTime', course.endTime);
+      setValue('semester', course.semester);
+      setValue('category', course.category);
+      setValue('class', course.class);
+    } else {
+      // Reset form for new course
+      reset();
+    }
+  }, [course, setValue, reset]);
+
+  const onSubmit = async (data: CourseForm) => {
+    setIsLoading(true);
+
+    try {
+      // Validate time logic
+      const startTime = new Date(`2000-01-01T${data.startTime}:00`);
+      const endTime = new Date(`2000-01-01T${data.endTime}:00`);
+
+      if (endTime <= startTime) {
+        toast.error('Jam selesai harus lebih besar dari jam mulai');
+        setIsLoading(false);
+        return;
+      }
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      onSave(data);
+      reset();
+    } catch {
+      toast.error('Terjadi kesalahan saat menyimpan mata kuliah');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const timeOptions = [];
+  for (let hour = 7; hour <= 18; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      timeOptions.push(timeString);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {course ? 'Edit Mata Kuliah' : 'Tambah Mata Kuliah'}
+          </DialogTitle>
+          <DialogDescription>
+            {course
+              ? 'Perbarui informasi mata kuliah'
+              : 'Tambahkan mata kuliah baru ke dalam sistem'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Course Code */}
+            <div className="space-y-2">
+              <Label htmlFor="code">Kode Mata Kuliah *</Label>
+              <Input id="code" placeholder="CS101" {...register('code')} />
+              {errors.code && (
+                <p className="text-sm text-red-600">{errors.code.message}</p>
+              )}
+            </div>
+
+            {/* Class - Now as string input */}
+            <div className="space-y-2">
+              <Label htmlFor="class">Kelas *</Label>
+              <Input
+                id="class"
+                placeholder="A, B, C, AA, BB, dll"
+                {...register('class')}
+              />
+              {errors.class && (
+                <p className="text-sm text-red-600">{errors.class.message}</p>
+              )}
+            </div>
+
+            {/* Semester */}
+            <div className="space-y-2">
+              <Label htmlFor="semester">Semester *</Label>
+              <Select
+                onValueChange={(value) => setValue('semester', value)}
+                value={watchedValues.semester}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih semester" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                    <SelectItem key={sem} value={sem.toString()}>
+                      Semester {sem}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.semester && (
+                <p className="text-sm text-red-600">
+                  {errors.semester.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Course Name */}
+          <div className="space-y-2">
+            <Label htmlFor="name">Nama Mata Kuliah *</Label>
+            <Input
+              id="name"
+              placeholder="Algoritma dan Pemrograman Dasar"
+              {...register('name')}
+            />
+            {errors.name && (
+              <p className="text-sm text-red-600">{errors.name.message}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Lecturer */}
+            <div className="space-y-2">
+              <Label htmlFor="lecturer">Dosen Pengampu *</Label>
+              <Input
+                id="lecturer"
+                placeholder="Dr. Ahmad Rizki"
+                {...register('lecturer')}
+              />
+              {errors.lecturer && (
+                <p className="text-sm text-red-600">
+                  {errors.lecturer.message}
+                </p>
+              )}
+            </div>
+
+            {/* Credits - Now as input field */}
+            <div className="space-y-2">
+              <Label htmlFor="credits">SKS *</Label>
+              <Input
+                id="credits"
+                type="number"
+                min="1"
+                max="20"
+                placeholder="3"
+                {...register('credits', { valueAsNumber: true })}
+              />
+              {errors.credits && (
+                <p className="text-sm text-red-600">{errors.credits.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Day */}
+            <div className="space-y-2">
+              <Label htmlFor="day">Hari *</Label>
+              <Select
+                onValueChange={(value) => setValue('day', value)}
+                value={watchedValues.day}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih hari" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Monday">Senin</SelectItem>
+                  <SelectItem value="Tuesday">Selasa</SelectItem>
+                  <SelectItem value="Wednesday">Rabu</SelectItem>
+                  <SelectItem value="Thursday">Kamis</SelectItem>
+                  <SelectItem value="Friday">Jumat</SelectItem>
+                  <SelectItem value="Saturday">Sabtu</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.day && (
+                <p className="text-sm text-red-600">{errors.day.message}</p>
+              )}
+            </div>
+
+            {/* Start Time */}
+            <div className="space-y-2">
+              <Label htmlFor="startTime">Jam Mulai *</Label>
+              <Select
+                onValueChange={(value) => setValue('startTime', value)}
+                value={watchedValues.startTime}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Jam mulai" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeOptions.map((time) => (
+                    <SelectItem key={time} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.startTime && (
+                <p className="text-sm text-red-600">
+                  {errors.startTime.message}
+                </p>
+              )}
+            </div>
+
+            {/* End Time */}
+            <div className="space-y-2">
+              <Label htmlFor="endTime">Jam Selesai *</Label>
+              <Select
+                onValueChange={(value) => setValue('endTime', value)}
+                value={watchedValues.endTime}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Jam selesai" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeOptions.map((time) => (
+                    <SelectItem key={time} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.endTime && (
+                <p className="text-sm text-red-600">{errors.endTime.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Room */}
+            <div className="space-y-2">
+              <Label htmlFor="room">Ruang *</Label>
+              <Input
+                id="room"
+                placeholder="Lab Komputer 1"
+                {...register('room')}
+              />
+              {errors.room && (
+                <p className="text-sm text-red-600">{errors.room.message}</p>
+              )}
+            </div>
+
+            {/* Category */}
+            <div className="space-y-2">
+              <Label htmlFor="category">Kategori *</Label>
+              <Select
+                onValueChange={(value) =>
+                  setValue('category', value as 'wajib' | 'pilihan')
+                }
+                value={watchedValues.category}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih kategori" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="wajib">Mata Kuliah Wajib</SelectItem>
+                  <SelectItem value="pilihan">Mata Kuliah Pilihan</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.category && (
+                <p className="text-sm text-red-600">
+                  {errors.category.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Form Actions */}
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isLoading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Menyimpan...</span>
+                </div>
+              ) : course ? (
+                'Perbarui'
+              ) : (
+                'Simpan'
+              )}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
