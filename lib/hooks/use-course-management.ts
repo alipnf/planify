@@ -10,7 +10,7 @@ import {
   getSelectedCourseNames,
   getAvailableClasses,
   getFullCourseCode,
-} from '@/lib/utils/course-utils';
+} from '@/lib/course-utils';
 
 export interface CourseManagementState {
   // Data

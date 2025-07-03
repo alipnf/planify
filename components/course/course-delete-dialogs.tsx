@@ -9,7 +9,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Course } from '@/lib/types/course';
-import { getFullCourseCode } from '@/lib/utils/course-utils';
+import { getFullCourseCode } from '@/lib/course-utils';
 
 interface CourseDeleteDialogsProps {
   // Single delete
