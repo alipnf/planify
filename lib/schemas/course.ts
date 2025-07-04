@@ -3,7 +3,7 @@ import { z } from 'zod';
 // Base validation rules for course fields
 export const courseValidation = {
   code: z
-    .string()
+    .string({ required_error: 'Kode mata kuliah harus diisi' })
     .min(1, 'Kode mata kuliah harus diisi')
     .min(5, 'Kode mata kuliah minimal 5 karakter')
     .max(10, 'Kode mata kuliah maksimal 10 karakter')
@@ -13,29 +13,37 @@ export const courseValidation = {
     ),
 
   name: z
-    .string()
+    .string({ required_error: 'Nama mata kuliah harus diisi' })
     .min(1, 'Nama mata kuliah harus diisi')
     .min(3, 'Nama mata kuliah minimal 3 karakter')
     .max(100, 'Nama mata kuliah maksimal 100 karakter'),
 
   lecturer: z
-    .string()
+    .string({ required_error: 'Nama dosen harus diisi' })
     .min(1, 'Nama dosen harus diisi')
     .min(2, 'Nama dosen minimal 2 karakter')
     .max(50, 'Nama dosen maksimal 50 karakter'),
 
-  credits: z.number().min(1, 'SKS minimal 1').max(20, 'SKS maksimal 20'),
+  credits: z
+    .number({
+      invalid_type_error: 'SKS harus berupa angka',
+      required_error: 'SKS harus diisi',
+    })
+    .min(1, 'SKS minimal 1')
+    .max(20, 'SKS maksimal 20'),
 
   room: z
-    .string()
+    .string({ required_error: 'Ruang harus diisi' })
     .min(1, 'Ruang harus diisi')
     .min(1, 'Ruang minimal 1 karakter')
     .max(20, 'Ruang maksimal 20 karakter'),
 
-  day: z.string().min(1, 'Hari harus dipilih'),
+  day: z
+    .string({ required_error: 'Hari harus dipilih' })
+    .min(1, 'Hari harus dipilih'),
 
   startTime: z
-    .string()
+    .string({ required_error: 'Waktu mulai harus diisi' })
     .min(1, 'Waktu mulai harus diisi')
     .regex(
       /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
@@ -43,21 +51,23 @@ export const courseValidation = {
     ),
 
   endTime: z
-    .string()
+    .string({ required_error: 'Waktu selesai harus diisi' })
     .min(1, 'Waktu selesai harus diisi')
     .regex(
       /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
       'Format waktu tidak valid (HH:MM)'
     ),
 
-  semester: z.string().min(1, 'Semester harus dipilih'),
+  semester: z
+    .string({ required_error: 'Semester harus dipilih' })
+    .min(1, 'Semester harus dipilih'),
 
   category: z.enum(['wajib', 'pilihan'], {
     required_error: 'Kategori harus dipilih',
   }),
 
   class: z
-    .string()
+    .string({ required_error: 'Kelas harus diisi' })
     .min(1, 'Kelas harus diisi')
     .min(1, 'Kelas minimal 1 karakter')
     .max(5, 'Kelas maksimal 5 karakter')
@@ -217,4 +227,3 @@ export function validateImportedCourse(
 
   return errors;
 }
-
