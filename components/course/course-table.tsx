@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Course } from '@/lib/types/course';
-import { formatDay, getFullCourseCode } from '@/lib/course-utils';
+import { getFullCourseCode } from '@/lib/course-utils';
+import { formatDay } from '@/lib/schedule-utils';
 
 interface CourseTableProps {
   courses: Course[];
