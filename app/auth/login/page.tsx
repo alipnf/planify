@@ -33,6 +33,11 @@ export default function LoginPage() {
         check: (msg) => msg.includes('Invalid login credentials'),
         message: 'Email atau password salah. Silakan periksa kembali.',
       },
+      {
+        check: (msg) => msg.includes('Email not confirmed'),
+        message:
+          'Silakan aktivasi email Anda terlebih dahulu. Cek email Anda untuk link aktivasi.',
+      },
     ],
     redirectConfig: { path: '/courses' },
   });
