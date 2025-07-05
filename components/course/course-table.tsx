@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Course } from '@/lib/types/course';
-import { formatDay, getFullCourseCode } from '@/lib/course-utils';
+import { getFullCourseCode } from '@/lib/course-utils';
 
 interface CourseTableProps {
   courses: Course[];
@@ -211,7 +211,7 @@ export function CourseTable({
                             </TableCell>
                             <TableCell>
                               <div className="text-sm">
-                                <div>{formatDay(course.day)}</div>
+                                <div>{course.day}</div>
                                 <div className="text-gray-500">
                                   {course.startTime} - {course.endTime}
                                 </div>
@@ -290,7 +290,7 @@ export function CourseTable({
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div>{formatDay(course.day)}</div>
+                          <div>{course.day}</div>
                           <div className="text-gray-500">
                             {course.startTime} - {course.endTime}
                           </div>

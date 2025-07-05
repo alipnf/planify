@@ -4,20 +4,9 @@ export const getFullCourseCode = (course: Course): string => {
   return `${course.code}-${course.class}`;
 };
 
-export const formatDay = (day: string): string => {
-  const dayLabels: Record<string, string> = {
-    Monday: 'Senin',
-    Tuesday: 'Selasa',
-    Wednesday: 'Rabu',
-    Thursday: 'Kamis',
-    Friday: 'Jumat',
-    Saturday: 'Sabtu',
-    Sunday: 'Minggu',
-  };
-  return dayLabels[day] || day;
-};
-
-export const groupCoursesByCode = (courses: Course[]): Record<string, Course[]> => {
+export const groupCoursesByCode = (
+  courses: Course[]
+): Record<string, Course[]> => {
   return courses.reduce(
     (groups, course) => {
       const { code } = course;
@@ -82,7 +71,10 @@ export const filterCourses = (
   });
 };
 
-export const getSelectedCourseNames = (courses: Course[], selectedCourseIds: string[]): string[] => {
+export const getSelectedCourseNames = (
+  courses: Course[],
+  selectedCourseIds: string[]
+): string[] => {
   return courses
     .filter((c) => selectedCourseIds.includes(c.id))
     .map((c) => `${getFullCourseCode(c)} - ${c.name}`);
@@ -92,5 +84,3 @@ export const getAvailableClasses = (courses: Course[]): string[] => {
   const classes = [...new Set(courses.map((c) => c.class))].sort();
   return classes;
 };
-
- 

@@ -6,23 +6,18 @@ const supabase = createClient();
 
 // Utility function: Transform camelCase to snake_case for database
 export function transformToDbFormat(
-  data: CreateCourseData | Partial<CreateCourseData>
+  data: CreateCourseData | UpdateCourseData | Partial<CreateCourseData>
 ): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-
-  // Copy all properties except time fields
-  Object.keys(data).forEach((key) => {
-    if (key !== 'startTime' && key !== 'endTime') {
-      result[key] = data[key as keyof typeof data];
-    }
-  });
+  const result: Record<string, unknown> = { ...data };
 
   // Transform time fields
   if ('startTime' in data && data.startTime) {
     result.start_time = data.startTime;
+    delete result.startTime;
   }
   if ('endTime' in data && data.endTime) {
     result.end_time = data.endTime;
+    delete result.endTime;
   }
 
   return result;
@@ -230,4 +225,3 @@ export const coursesService = {
   importCourses,
   getCurrentUser,
 };
-

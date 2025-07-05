@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import {
   Dialog,
   DialogContent,
@@ -23,36 +22,10 @@ import {
 import { toast } from 'sonner';
 import { Course } from '@/lib/types/course';
 
-const courseSchema = z.object({
-  code: z
-    .string()
-    .min(5, 'Kode mata kuliah minimal 5 karakter')
-    .max(10, 'Kode mata kuliah maksimal 10 karakter'),
-  name: z
-    .string()
-    .min(3, 'Nama mata kuliah minimal 3 karakter')
-    .max(100, 'Nama mata kuliah maksimal 100 karakter'),
-  lecturer: z
-    .string()
-    .min(3, 'Nama dosen minimal 3 karakter')
-    .max(50, 'Nama dosen maksimal 50 karakter'),
-  credits: z.number().min(1, 'SKS minimal 1').max(20, 'SKS maksimal 20'),
-  room: z
-    .string()
-    .min(2, 'Ruang minimal 2 karakter')
-    .max(20, 'Ruang maksimal 20 karakter'),
-  day: z.string().min(1, 'Pilih hari'),
-  startTime: z.string().min(1, 'Pilih jam mulai'),
-  endTime: z.string().min(1, 'Pilih jam selesai'),
-  semester: z.string().min(1, 'Pilih semester'),
-  category: z.enum(['wajib', 'pilihan'], { required_error: 'Pilih kategori' }),
-  class: z
-    .string()
-    .min(1, 'Kelas harus diisi')
-    .max(5, 'Kelas maksimal 5 karakter'),
-});
-
-type CourseForm = z.infer<typeof courseSchema>;
+import {
+  createCourseSchema,
+  type CreateCourseFormData,
+} from '@/lib/schemas/course';
 
 interface CourseModalProps {
   open: boolean;
@@ -76,8 +49,8 @@ export function CourseModal({
     watch,
     reset,
     formState: { errors },
-  } = useForm<CourseForm>({
-    resolver: zodResolver(courseSchema),
+  } = useForm<CreateCourseFormData>({
+    resolver: zodResolver(createCourseSchema),
   });
 
   const watchedValues = watch();
@@ -102,7 +75,7 @@ export function CourseModal({
     }
   }, [course, setValue, reset]);
 
-  const onSubmit = async (data: CourseForm) => {
+  const onSubmit = async (data: CreateCourseFormData) => {
     setIsLoading(true);
 
     try {

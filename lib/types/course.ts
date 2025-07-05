@@ -65,10 +65,6 @@ export interface ImportCourseData {
 
 // Course category type
 export type CourseCategory = 'wajib' | 'pilihan';
-
-// Day of week type
-export type DayOfWeek = 'senin' | 'selasa' | 'rabu' | 'kamis' | 'jumat' | 'sabtu' | 'minggu';
-
 // Course filter options
 export interface CourseFilters {
   searchQuery: string;
@@ -82,4 +78,4 @@ export interface GroupedCourse {
   code: string;
   courses: Course[];
   totalClasses: number;
-} 
+}
