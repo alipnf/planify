@@ -2,28 +2,28 @@ import { Course } from '@/lib/types/course';
 
 // Days of week array
 export const daysOfWeek = [
-  'senin',
-  'selasa',
-  'rabu',
-  'kamis',
-  'jumat',
-  'sabtu',
-  'minggu',
+  'Senin',
+  'Selasa',
+  'Rabu',
+  'Kamis',
+  'Jumat',
+  'Sabtu',
+  'Minggu',
 ];
 
-// Format day helper
-export const formatDay = (day: string): string => {
-  const dayLabels: Record<string, string> = {
-    senin: 'Senin',
-    selasa: 'Selasa',
-    rabu: 'Rabu',
-    kamis: 'Kamis',
-    jumat: 'Jumat',
-    sabtu: 'Sabtu',
-    minggu: 'Minggu',
-  };
-  return dayLabels[day.toLowerCase()] || day;
-};
+// // Format day helper
+// export const formatDay = (day: string): string => {
+//   const dayLabels: Record<string, string> = {
+//     senin: 'Senin',
+//     selasa: 'Selasa',
+//     rabu: 'Rabu',
+//     kamis: 'Kamis',
+//     jumat: 'Jumat',
+//     sabtu: 'Sabtu',
+//     minggu: 'Minggu',
+//   };
+//   return dayLabels[day.toLowerCase()] || day;
+// };
 
 // Time conflict detection
 interface TimeConflict {

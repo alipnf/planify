@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Course } from '@/lib/types/course';
-import { daysOfWeek, formatDay, getCourseColor } from '@/lib/schedule-utils';
+import { daysOfWeek, getCourseColor } from '@/lib/schedule-utils';
 
 interface TimeConflict {
   courses: [Course, Course];
@@ -86,7 +86,7 @@ export function WeeklySchedule({
                   key={day}
                   className="p-2 text-xs font-medium text-gray-500 text-center"
                 >
-                  {formatDay(day)}
+                  {day}
                 </div>
               ))}
             </div>

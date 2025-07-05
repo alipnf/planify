@@ -10,7 +10,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Course } from '@/lib/types/course';
-import { formatDay } from '@/lib/schedule-utils';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -216,8 +215,8 @@ export function CourseSelectionPanel({
                         • {course.credits} SKS • {course.lecturer}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        {formatDay(course.day)}, {course.startTime}-
-                        {course.endTime} • {course.room}
+                        {course.day}, {course.startTime}-{course.endTime} •{' '}
+                        {course.room}
                       </div>
                       <Badge
                         variant="outline"
