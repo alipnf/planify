@@ -13,7 +13,6 @@ interface ErrorMap {
 
 interface RedirectConfig {
   path: string;
-  delay?: number;
 }
 
 interface AuthConfig<T extends FieldValues> {
@@ -57,10 +56,7 @@ export function useAuth<T extends FieldValues>({
       } else {
         showSuccess(successMessage);
         if (redirectConfig) {
-          setTimeout(
-            () => router.push(redirectConfig.path),
-            redirectConfig.delay ?? 0
-          );
+          router.push(redirectConfig.path);
         }
       }
     } catch (err) {
@@ -78,4 +74,3 @@ export function useAuth<T extends FieldValues>({
     onSubmit,
   };
 }
-

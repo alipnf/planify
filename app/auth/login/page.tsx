@@ -34,7 +34,7 @@ export default function LoginPage() {
         message: 'Email atau password salah. Silakan periksa kembali.',
       },
     ],
-    redirectConfig: { path: '/', delay: 1000 },
+    redirectConfig: { path: '/courses' },
   });
 
   return (
