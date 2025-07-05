@@ -11,7 +11,7 @@ export const daysOfWeek = [
   'Minggu',
 ];
 
-// // Format day helper
+// Format day helper
 // export const formatDay = (day: string): string => {
 //   const dayLabels: Record<string, string> = {
 //     senin: 'Senin',
@@ -182,63 +182,63 @@ export const generateTimeSlots = (): string[] => {
 };
 
 // Normalize day name to handle both English and Indonesian
-export const normalizeDayName = (day: string): string => {
-  const dayMap: Record<string, string> = {
-    // English to Indonesian (lowercase)
-    monday: 'senin',
-    tuesday: 'selasa',
-    wednesday: 'rabu',
-    thursday: 'kamis',
-    friday: 'jumat',
-    saturday: 'sabtu',
-    sunday: 'minggu',
-    // English to Indonesian (capitalized)
-    Monday: 'senin',
-    Tuesday: 'selasa',
-    Wednesday: 'rabu',
-    Thursday: 'kamis',
-    Friday: 'jumat',
-    Saturday: 'sabtu',
-    Sunday: 'minggu',
-    // Indonesian (already normalized)
-    senin: 'senin',
-    selasa: 'selasa',
-    rabu: 'rabu',
-    kamis: 'kamis',
-    jumat: 'jumat',
-    sabtu: 'sabtu',
-    minggu: 'minggu',
-    // Indonesian (capitalized)
-    Senin: 'senin',
-    Selasa: 'selasa',
-    Rabu: 'rabu',
-    Kamis: 'kamis',
-    Jumat: 'jumat',
-    Sabtu: 'sabtu',
-    Minggu: 'minggu',
-  };
-
-  return dayMap[day] || day.toLowerCase();
-};
-
-// Utility function to convert English day names to Indonesian
-export const convertDayToIndonesian = (day: string): string => {
-  const englishToIndonesian: Record<string, string> = {
-    Monday: 'senin',
-    Tuesday: 'selasa',
-    Wednesday: 'rabu',
-    Thursday: 'kamis',
-    Friday: 'jumat',
-    Saturday: 'sabtu',
-    Sunday: 'minggu',
-    monday: 'senin',
-    tuesday: 'selasa',
-    wednesday: 'rabu',
-    thursday: 'kamis',
-    friday: 'jumat',
-    saturday: 'sabtu',
-    sunday: 'minggu',
-  };
-
-  return englishToIndonesian[day] || day.toLowerCase();
-};
+// export const normalizeDayName = (day: string): string => {
+//   const dayMap: Record<string, string> = {
+//     // English to Indonesian (lowercase)
+//     monday: 'senin',
+//     tuesday: 'selasa',
+//     wednesday: 'rabu',
+//     thursday: 'kamis',
+//     friday: 'jumat',
+//     saturday: 'sabtu',
+//     sunday: 'minggu',
+//     // English to Indonesian (capitalized)
+//     Monday: 'senin',
+//     Tuesday: 'selasa',
+//     Wednesday: 'rabu',
+//     Thursday: 'kamis',
+//     Friday: 'jumat',
+//     Saturday: 'sabtu',
+//     Sunday: 'minggu',
+//     // Indonesian (already normalized)
+//     senin: 'senin',
+//     selasa: 'selasa',
+//     rabu: 'rabu',
+//     kamis: 'kamis',
+//     jumat: 'jumat',
+//     sabtu: 'sabtu',
+//     minggu: 'minggu',
+//     // Indonesian (capitalized)
+//     Senin: 'senin',
+//     Selasa: 'selasa',
+//     Rabu: 'rabu',
+//     Kamis: 'kamis',
+//     Jumat: 'jumat',
+//     Sabtu: 'sabtu',
+//     Minggu: 'minggu',
+//   };
+//
+//   return dayMap[day] || day.toLowerCase();
+// };
+//
+// // Utility function to convert English day names to Indonesian
+// export const convertDayToIndonesian = (day: string): string => {
+//   const englishToIndonesian: Record<string, string> = {
+//     Monday: 'senin',
+//     Tuesday: 'selasa',
+//     Wednesday: 'rabu',
+//     Thursday: 'kamis',
+//     Friday: 'jumat',
+//     Saturday: 'sabtu',
+//     Sunday: 'minggu',
+//     monday: 'senin',
+//     tuesday: 'selasa',
+//     wednesday: 'rabu',
+//     thursday: 'kamis',
+//     friday: 'jumat',
+//     saturday: 'sabtu',
+//     sunday: 'minggu',
+//   };
+//
+//   return englishToIndonesian[day] || day.toLowerCase();
+// };

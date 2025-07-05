@@ -4,7 +4,6 @@ import {
   detectTimeConflicts,
   calculateScheduleStats,
   generateTimeSlots,
-  normalizeDayName,
 } from '@/lib/schedule-utils';
 
 export function useScheduleManagement() {
@@ -52,17 +51,8 @@ export function useScheduleManagement() {
   };
 
   // Get course at specific time/day
-  const getCourseAtTime = (day: string, time: string): Course | undefined => {
-    const normalizedDay = normalizeDayName(day);
-
+  const getCourseAtTime = (time: string): Course | undefined => {
     return selectedCourses.find((course) => {
-      const courseNormalizedDay = normalizeDayName(course.day);
-
-      // Check if it's the same day
-      if (courseNormalizedDay !== normalizedDay) {
-        return false;
-      }
-
       // Check if time overlaps
       const courseStart = course.startTime;
       const courseEnd = course.endTime;
@@ -102,8 +92,5 @@ export function useScheduleManagement() {
     // Setters
     setSearchQuery,
     setFilterSemester,
-
-    // Utility
-    normalizeDayName,
   };
 }
