@@ -11,20 +11,6 @@ export const daysOfWeek = [
   'Minggu',
 ];
 
-// Format day helper
-// export const formatDay = (day: string): string => {
-//   const dayLabels: Record<string, string> = {
-//     senin: 'Senin',
-//     selasa: 'Selasa',
-//     rabu: 'Rabu',
-//     kamis: 'Kamis',
-//     jumat: 'Jumat',
-//     sabtu: 'Sabtu',
-//     minggu: 'Minggu',
-//   };
-//   return dayLabels[day.toLowerCase()] || day;
-// };
-
 // Time conflict detection
 interface TimeConflict {
   courses: [Course, Course];
@@ -181,64 +167,15 @@ export const generateTimeSlots = (): string[] => {
   return slots;
 };
 
-// Normalize day name to handle both English and Indonesian
-// export const normalizeDayName = (day: string): string => {
-//   const dayMap: Record<string, string> = {
-//     // English to Indonesian (lowercase)
-//     monday: 'senin',
-//     tuesday: 'selasa',
-//     wednesday: 'rabu',
-//     thursday: 'kamis',
-//     friday: 'jumat',
-//     saturday: 'sabtu',
-//     sunday: 'minggu',
-//     // English to Indonesian (capitalized)
-//     Monday: 'senin',
-//     Tuesday: 'selasa',
-//     Wednesday: 'rabu',
-//     Thursday: 'kamis',
-//     Friday: 'jumat',
-//     Saturday: 'sabtu',
-//     Sunday: 'minggu',
-//     // Indonesian (already normalized)
-//     senin: 'senin',
-//     selasa: 'selasa',
-//     rabu: 'rabu',
-//     kamis: 'kamis',
-//     jumat: 'jumat',
-//     sabtu: 'sabtu',
-//     minggu: 'minggu',
-//     // Indonesian (capitalized)
-//     Senin: 'senin',
-//     Selasa: 'selasa',
-//     Rabu: 'rabu',
-//     Kamis: 'kamis',
-//     Jumat: 'jumat',
-//     Sabtu: 'sabtu',
-//     Minggu: 'minggu',
-//   };
-//
-//   return dayMap[day] || day.toLowerCase();
-// };
-//
-// // Utility function to convert English day names to Indonesian
-// export const convertDayToIndonesian = (day: string): string => {
-//   const englishToIndonesian: Record<string, string> = {
-//     Monday: 'senin',
-//     Tuesday: 'selasa',
-//     Wednesday: 'rabu',
-//     Thursday: 'kamis',
-//     Friday: 'jumat',
-//     Saturday: 'sabtu',
-//     Sunday: 'minggu',
-//     monday: 'senin',
-//     tuesday: 'selasa',
-//     wednesday: 'rabu',
-//     thursday: 'kamis',
-//     friday: 'jumat',
-//     saturday: 'sabtu',
-//     sunday: 'minggu',
-//   };
-//
-//   return englishToIndonesian[day] || day.toLowerCase();
-// };
+// Find the course for a given day and time (case-insensitive)
+export function findCourseAtTime(
+  courses: Course[],
+  day: string,
+  time: string
+): Course | undefined {
+  const dayLower = day.trim().toLowerCase();
+  return courses.find((course) => {
+    if (course.day.trim().toLowerCase() !== dayLower) return false;
+    return time >= course.startTime && time < course.endTime;
+  });
+}

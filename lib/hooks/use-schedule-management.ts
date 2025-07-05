@@ -4,6 +4,7 @@ import {
   detectTimeConflicts,
   calculateScheduleStats,
   generateTimeSlots,
+  findCourseAtTime,
 } from '@/lib/schedule-utils';
 
 export function useScheduleManagement() {
@@ -50,15 +51,9 @@ export function useScheduleManagement() {
     });
   };
 
-  // Get course at specific time/day
-  const getCourseAtTime = (time: string): Course | undefined => {
-    return selectedCourses.find((course) => {
-      // Check if time overlaps
-      const courseStart = course.startTime;
-      const courseEnd = course.endTime;
-
-      return time >= courseStart && time < courseEnd;
-    });
+  // Get course at specific day/time for preview
+  const getCourseAtTime = (day: string, time: string): Course | undefined => {
+    return findCourseAtTime(selectedCourses, day, time);
   };
 
   // Clear all selections
