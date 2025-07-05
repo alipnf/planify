@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/select';
 import { Course } from '@/lib/types/course';
 import { formatDay } from '@/lib/schedule-utils';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 interface TimeConflict {
   courses: [Course, Course];
@@ -116,9 +118,14 @@ export function CourseSelectionPanel({
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             Belum ada data mata kuliah
           </h3>
-          <p className="text-gray-500">
-            Silakan tambahkan mata kuliah terlebih dahulu di halaman Courses
-          </p>
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-gray-500 mb-4">
+              Silakan tambahkan mata kuliah terlebih dahulu.
+            </p>
+            <Button asChild>
+              <Link href="/courses">Buka Halaman Courses</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
