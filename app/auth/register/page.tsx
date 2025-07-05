@@ -9,6 +9,7 @@ import { AuthLayout, AuthSeparator } from '@/components/auth/auth-layout';
 import { PasswordInput } from '@/components/ui/password-input';
 import { FormField } from '@/components/ui/form-field';
 import { registerSchema, type RegisterFormData } from '@/lib/schemas/auth';
+import { AuthError } from '@supabase/supabase-js';
 
 export default function RegisterPage() {
   const {
@@ -21,19 +22,27 @@ export default function RegisterPage() {
   } = useAuth<RegisterFormData>({
     schema: registerSchema,
     handler: async (supabase, data) => {
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: { data: { full_name: data.name } },
       });
-      return error;
+
+      if (error) {
+        return error;
+      }
+
+      if (signUpData.user && signUpData.user.identities?.length === 0) {
+        return new AuthError('User already registered');
+      }
+
+      return null;
     },
     successMessage: 'Pendaftaran berhasil! Cek email untuk konfirmasi akun.',
     errorMaps: [
       {
         check: (msg) => msg.includes('already registered'),
-        message:
-          'Email sudah terdaftar. Silakan gunakan email lain atau login.',
+        message: 'Email sudah terdaftar. Silakan gunakan email lain.',
       },
     ],
   });
