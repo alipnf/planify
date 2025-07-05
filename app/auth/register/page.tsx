@@ -2,10 +2,7 @@
 
 import { Mail, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createClient } from '@/lib/supabase/client';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMessage } from '@/lib/hooks/use-message';
+import { useAuth } from '@/lib/hooks/use-auth';
 import { MessageDisplay } from '@/components/ui/message-display';
 import { GoogleSignInButton } from '@/components/auth/google-signin-button';
 import { AuthLayout, AuthSeparator } from '@/components/auth/auth-layout';
@@ -14,44 +11,32 @@ import { FormField } from '@/components/ui/form-field';
 import { registerSchema, type RegisterFormData } from '@/lib/schemas/auth';
 
 export default function RegisterPage() {
-  const { message, showError, showSuccess, clearMessage } = useMessage();
-
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-  });
-
-  const onSubmit = async (data: RegisterFormData) => {
-    clearMessage();
-
-    const supabase = createClient();
-    try {
+    message,
+    showError,
+    onSubmit,
+  } = useAuth<RegisterFormData>({
+    schema: registerSchema,
+    handler: async (supabase, data) => {
       const { error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-        options: {
-          data: { full_name: data.name },
-        },
+        options: { data: { full_name: data.name } },
       });
-      if (error) {
-        if (error.message.includes('already registered')) {
-          showError(
-            'Email sudah terdaftar. Silakan gunakan email lain atau login.'
-          );
-        } else {
-          showError(error.message);
-        }
-      } else {
-        showSuccess('Pendaftaran berhasil! Cek email untuk konfirmasi akun.');
-      }
-    } catch (error) {
-      showError('Terjadi kesalahan. Silakan coba lagi.');
-      console.error('Error registering:', error);
-    }
-  };
+      return error;
+    },
+    successMessage: 'Pendaftaran berhasil! Cek email untuk konfirmasi akun.',
+    errorMaps: [
+      {
+        check: (msg) => msg.includes('already registered'),
+        message:
+          'Email sudah terdaftar. Silakan gunakan email lain atau login.',
+      },
+    ],
+  });
 
   return (
     <AuthLayout

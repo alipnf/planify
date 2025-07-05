@@ -1,55 +1,41 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createClient } from '@/lib/supabase/client';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMessage } from '@/lib/hooks/use-message';
 import { MessageDisplay } from '@/components/ui/message-display';
 import { GoogleSignInButton } from '@/components/auth/google-signin-button';
 import { AuthLayout, AuthSeparator } from '@/components/auth/auth-layout';
 import { PasswordInput } from '@/components/ui/password-input';
 import { FormField } from '@/components/ui/form-field';
 import { loginSchema, type LoginFormData } from '@/lib/schemas/auth';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 export default function LoginPage() {
-  const { message, showError, showSuccess, clearMessage } = useMessage();
-  const router = useRouter();
-
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  });
-
-  const onSubmit = async (data: LoginFormData) => {
-    clearMessage();
-
-    const supabase = createClient();
-    try {
+    message,
+    showError,
+    onSubmit,
+  } = useAuth<LoginFormData>({
+    schema: loginSchema,
+    handler: async (supabase, data) => {
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
-      if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          showError('Email atau password salah. Silakan periksa kembali.');
-        } else {
-          showError(error.message);
-        }
-      } else {
-        showSuccess('Login berhasil! Mengalihkan...');
-        setTimeout(() => router.push('/'), 1000);
-      }
-    } catch (error) {
-      showError('Terjadi kesalahan. Silakan coba lagi.');
-      console.error('Error logging in:', error);
-    }
-  };
+      return error;
+    },
+    successMessage: 'Login berhasil! Mengalihkan...',
+    errorMaps: [
+      {
+        check: (msg) => msg.includes('Invalid login credentials'),
+        message: 'Email atau password salah. Silakan periksa kembali.',
+      },
+    ],
+    redirectConfig: { path: '/', delay: 1000 },
+  });
 
   return (
     <AuthLayout
