@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client';
 import { useMessage } from '@/lib/hooks/use-message';
 import type { ZodTypeAny } from 'zod';
 import type { AuthError } from '@supabase/supabase-js';
+import { useState, useEffect, useCallback } from 'react';
+import { type User } from '@supabase/supabase-js';
 
 interface ErrorMap {
   check: (msg: string) => boolean;
@@ -73,4 +75,34 @@ export function useAuth<T extends FieldValues>({
     showError,
     onSubmit,
   };
+}
+
+export function useUser() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  const getUser = useCallback(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setUser(user);
+    setLoading(false);
+  }, [supabase.auth]);
+
+  useEffect(() => {
+    getUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, [getUser, supabase.auth]);
+
+  return { user, loading };
 }
