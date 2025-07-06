@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, X, Upload } from 'lucide-react';
+import { AlertCircle, X, Download } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -134,7 +134,7 @@ export default function SavedSchedulesPage() {
         </div>
         <div>
           <Button onClick={() => setShowImportDialog(true)}>
-            <Upload className="h-4 w-4 mr-2" />
+            <Download className="h-4 w-4 mr-2" />
             Impor Jadwal
           </Button>
         </div>

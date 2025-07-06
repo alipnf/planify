@@ -11,10 +11,10 @@ import { Button } from '@/components/ui/button';
 import {
   Book,
   Clock,
-  Download,
   Eye,
   Share2 as Share,
   Trash2,
+  Upload,
 } from 'lucide-react';
 import type { SavedSchedule } from '@/lib/services/schedules';
 
@@ -74,7 +74,7 @@ export function ScheduleCard({
             size="icon"
             onClick={() => onExport(schedule)}
           >
-            <Download className="h-4 w-4" />
+            <Upload className="h-4 w-4" />
           </Button>
           <Button
             variant="destructive"
