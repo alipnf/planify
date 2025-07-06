@@ -180,7 +180,7 @@ export function CourseSelectionPanel({
           </div>
 
           {/* Course List */}
-          <div className="space-y-2 max-h-[600px] overflow-y-auto">
+          <div className="space-y-2 max-h-[calc(100vh-420px)] overflow-y-auto pr-4">
             {courses.map((course) => {
               const isSelected = selectedCourses.find(
                 (c) => c.id === course.id
@@ -219,16 +219,12 @@ export function CourseSelectionPanel({
                         {course.room}
                       </div>
                       <Badge
-                        variant="outline"
-                        className={`mt-1 text-xs ${
-                          course.category === 'wajib'
-                            ? 'border-red-200 text-red-700'
-                            : course.category === 'pilihan'
-                              ? 'border-blue-200 text-blue-700'
-                              : 'border-green-200 text-green-700'
-                        }`}
+                        variant={
+                          course.category === 'wajib' ? 'default' : 'secondary'
+                        }
+                        className="text-xs mt-1"
                       >
-                        {course.category.toUpperCase()}
+                        {course.category}
                       </Badge>
 
                       {isConflicted && (
