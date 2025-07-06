@@ -10,11 +10,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Save } from 'lucide-react';
 
 interface SaveScheduleDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (scheduleName: string) => void;
+  onSave: (scheduleName: string) => Promise<void>;
   isSaving: boolean;
   defaultScheduleName?: string;
 }
@@ -24,56 +25,60 @@ export function SaveScheduleDialog({
   onClose,
   onSave,
   isSaving,
-  defaultScheduleName,
+  defaultScheduleName = '',
 }: SaveScheduleDialogProps) {
-  const [scheduleName, setScheduleName] = useState('');
+  const [scheduleName, setScheduleName] = useState(defaultScheduleName);
 
   useEffect(() => {
-    if (isOpen && defaultScheduleName) {
-      setScheduleName(defaultScheduleName);
-    } else if (!isOpen) {
-      setScheduleName(''); // Reset saat dialog ditutup
-    }
-  }, [isOpen, defaultScheduleName]);
+    setScheduleName(defaultScheduleName);
+  }, [defaultScheduleName, isOpen]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (scheduleName.trim()) {
-      onSave(scheduleName.trim());
+      await onSave(scheduleName.trim());
     }
   };
 
+  const handleClose = () => {
+    if (isSaving) return;
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Simpan Jadwal</DialogTitle>
+          <DialogTitle className="flex items-center space-x-2">
+            <Save className="h-5 w-5" />
+            <span>Simpan Jadwal Kuliah</span>
+          </DialogTitle>
           <DialogDescription>
-            Beri nama jadwal Anda agar mudah ditemukan nanti.
+            Beri nama yang deskriptif untuk jadwal ini agar mudah Anda kenali
+            nanti.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Nama Jadwal
-            </Label>
-            <Input
-              id="name"
-              value={scheduleName}
-              onChange={(e) => setScheduleName(e.target.value)}
-              className="col-span-3"
-              placeholder="Contoh: Jadwal Semester 3"
-            />
-          </div>
+        <div className="space-y-2 py-4">
+          <Label htmlFor="schedule-name">Nama Jadwal</Label>
+          <Input
+            id="schedule-name"
+            value={scheduleName}
+            onChange={(e) => setScheduleName(e.target.value)}
+            placeholder="Contoh: Jadwal Semester Genap"
+            disabled={isSaving}
+          />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSaving}>
+          <Button variant="outline" onClick={handleClose} disabled={isSaving}>
             Batal
           </Button>
           <Button
             onClick={handleSave}
             disabled={!scheduleName.trim() || isSaving}
           >
-            {isSaving ? 'Menyimpan...' : 'Simpan'}
+            {isSaving && (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            )}
+            {isSaving ? 'Menyimpan...' : 'Simpan Jadwal'}
           </Button>
         </DialogFooter>
       </DialogContent>
