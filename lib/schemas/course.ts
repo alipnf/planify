@@ -77,8 +77,9 @@ export const courseValidation = {
     ),
 };
 
-// Base object schema without refinement
-const baseCourseSchema = z.object({
+// Base object schema without refinement, can be used for validation.
+export const courseSchema = z.object({
+  id: z.string().optional(),
   code: courseValidation.code,
   name: courseValidation.name,
   lecturer: courseValidation.lecturer,
@@ -93,7 +94,7 @@ const baseCourseSchema = z.object({
 });
 
 // Create course schema
-export const createCourseSchema = baseCourseSchema.refine(
+export const createCourseSchema = courseSchema.refine(
   (data) => {
     const start = new Date(`2000-01-01T${data.startTime}:00`);
     const end = new Date(`2000-01-01T${data.endTime}:00`);
@@ -106,7 +107,7 @@ export const createCourseSchema = baseCourseSchema.refine(
 );
 
 // Update course schema
-export const updateCourseSchema = baseCourseSchema
+export const updateCourseSchema = courseSchema
   .partial()
   .extend({
     id: z.string().min(1, 'ID mata kuliah harus ada'),
