@@ -43,7 +43,7 @@ export async function saveSchedule(
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error saving schedule:', error);
+    console.error('Failed to save schedule:', error);
     throw new Error('Gagal menyimpan jadwal. Silakan coba lagi.');
   }
 }
@@ -63,7 +63,7 @@ export async function getSavedSchedules(): Promise<SavedSchedule[]> {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Error fetching schedules:', error);
+    console.error('Failed to get saved schedules:', error);
     throw new Error('Gagal mengambil jadwal tersimpan.');
   }
 }
@@ -82,7 +82,7 @@ export async function deleteSavedSchedule(scheduleId: string): Promise<void> {
 
     if (error) throw error;
   } catch (error) {
-    console.error('Error deleting schedule:', error);
+    console.error('Failed to delete schedule:', error);
     throw new Error('Gagal menghapus jadwal.');
   }
 }
@@ -90,42 +90,49 @@ export async function deleteSavedSchedule(scheduleId: string): Promise<void> {
 export async function getScheduleByShareId(
   shareId: string
 ): Promise<SavedSchedule | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('saved_schedules')
-    .select('*')
-    .eq('share_id', shareId)
-    .eq('is_shared', true)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('saved_schedules')
+      .select('*')
+      .eq('share_id', shareId)
+      .eq('is_shared', true)
+      .single();
 
-  if (error) {
-    console.error('Error fetching shared schedule:', error);
+    // .single() throws an error if no rows are found (PGRST116).
+    // We can treat this specific case as "not found" and return null.
+    // For any other error, we let it be caught by the catch block.
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Failed to get schedule by share ID:', error);
     return null;
   }
-
-  return data;
 }
 
 export async function updateScheduleSharing(
   scheduleId: string,
   isShared: boolean
 ): Promise<SavedSchedule> {
-  const supabase = createClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData?.user) throw new Error('User not authenticated');
+  try {
+    const user = await getCurrentUser();
+    if (!user) throw new Error('User not authenticated');
 
-  const { data, error } = await supabase
-    .from('saved_schedules')
-    .update({ is_shared: isShared })
-    .eq('id', scheduleId)
-    .eq('user_id', userData.user.id)
-    .select()
-    .single();
+    const { data, error } = await supabase
+      .from('saved_schedules')
+      .update({ is_shared: isShared })
+      .eq('id', scheduleId)
+      .eq('user_id', user.id)
+      .select()
+      .single();
 
-  if (error) {
-    console.error('Error updating schedule sharing status:', error);
+    if (error) throw error;
+
+    return data;
+  } catch (error) {
+    console.error('Failed to update schedule sharing status:', error);
     throw new Error('Gagal memperbarui status berbagi jadwal.');
   }
-
-  return data;
 }

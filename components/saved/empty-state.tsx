@@ -2,7 +2,7 @@ import { Calendar } from 'lucide-react';
 
 export function EmptyState() {
   return (
-    <div className="text-center py-16 px-6 bg-gray-50 rounded-lg">
+    <div className="text-center py-16 px-6 rounded-lg">
       <div className="mx-auto h-16 w-16 text-gray-400">
         <Calendar size={64} />
       </div>
