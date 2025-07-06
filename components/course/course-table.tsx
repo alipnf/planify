@@ -220,11 +220,10 @@ export function CourseTable({
                             <TableCell>{course.room}</TableCell>
                             <TableCell>
                               <Badge
-                                variant="default"
-                                className={
+                                variant={
                                   course.category === 'wajib'
-                                    ? 'bg-green-100 text-green-800 border-green-200'
-                                    : 'bg-blue-100 text-blue-800 border-blue-200'
+                                    ? 'default'
+                                    : 'secondary'
                                 }
                               >
                                 {course.category === 'wajib'
@@ -299,11 +298,10 @@ export function CourseTable({
                       <TableCell>{course.room}</TableCell>
                       <TableCell>
                         <Badge
-                          variant="default"
-                          className={
+                          variant={
                             course.category === 'wajib'
-                              ? 'bg-green-100 text-green-800 border-green-200'
-                              : 'bg-blue-100 text-blue-800 border-blue-200'
+                              ? 'default'
+                              : 'secondary'
                           }
                         >
                           {course.category === 'wajib' ? 'Wajib' : 'Pilihan'}

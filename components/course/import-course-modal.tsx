@@ -52,6 +52,20 @@ export function ImportCoursesModal({
       const text = await file.text();
       const data = JSON.parse(text);
 
+      // Check if it's a schedule file
+      if (
+        typeof data === 'object' &&
+        data !== null &&
+        !Array.isArray(data) &&
+        data.type === 'planify-schedule'
+      ) {
+        setValidationErrors([
+          'File ini adalah file jadwal, bukan file mata kuliah. Silakan gunakan fitur "Impor Jadwal".',
+        ]);
+        setPreviewData(null);
+        return;
+      }
+
       // Validate and normalize data
       const { validatedData, errors } = validateImportData(data);
 
