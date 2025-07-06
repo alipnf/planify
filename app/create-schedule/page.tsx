@@ -75,7 +75,7 @@ export default function CreateSchedulePage() {
 
   return (
     <>
-      <div className="container mx-auto p-6 max-w-7xl min-h-screen">
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2">Buat Jadwal Kuliah</h1>
           <p className="text-gray-600">

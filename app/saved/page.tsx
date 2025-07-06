@@ -46,11 +46,10 @@ export default function SavedSchedulesPage() {
 
   // --- UI State ---
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [scheduleToDelete, setScheduleToDelete] = useState<SavedSchedule | null>(
-    null,
-  );
+  const [scheduleToDelete, setScheduleToDelete] =
+    useState<SavedSchedule | null>(null);
   const [activeSchedule, setActiveSchedule] = useState<SavedSchedule | null>(
-    null,
+    null
   );
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
@@ -125,7 +124,7 @@ export default function SavedSchedulesPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl min-h-screen">
+    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold mb-2">Jadwal Tersimpan</h1>
@@ -141,7 +140,7 @@ export default function SavedSchedulesPage() {
         </div>
       </div>
 
-      <main className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <main className="flex-1 space-y-4 pt-6">
         {activeSchedule && (
           <div className="mb-8">
             <Card>
@@ -194,10 +193,7 @@ export default function SavedSchedulesPage() {
         )}
       </main>
 
-      <AlertDialog
-        open={showDeleteAlert}
-        onOpenChange={setShowDeleteAlert}
-      >
+      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
