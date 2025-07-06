@@ -17,9 +17,11 @@ import {
   Upload,
 } from 'lucide-react';
 import type { SavedSchedule } from '@/lib/services/schedules';
+import { cn } from '@/lib/utils';
 
 interface ScheduleCardProps {
   schedule: SavedSchedule;
+  isActive: boolean;
   onDelete: (schedule: SavedSchedule) => void;
   onPreview: (schedule: SavedSchedule) => void;
   onExport: (schedule: SavedSchedule) => void;
@@ -28,6 +30,7 @@ interface ScheduleCardProps {
 
 export function ScheduleCard({
   schedule,
+  isActive,
   onDelete,
   onPreview,
   onExport,
@@ -42,7 +45,12 @@ export function ScheduleCard({
   }, [schedule.schedule_data]);
 
   return (
-    <Card>
+    <Card
+      className={cn(
+        'transition-colors',
+        isActive && 'bg-primary/10 border-primary'
+      )}
+    >
       <CardHeader>
         <CardTitle>{schedule.schedule_name}</CardTitle>
         <CardDescription>

@@ -185,6 +185,7 @@ export default function SavedSchedulesPage() {
           <ScheduleGrid
             schedules={schedules}
             isLoading={isLoading}
+            activeScheduleId={activeSchedule?.id || null}
             onDelete={handleDeleteClick}
             onPreview={handlePreviewClick}
             onExport={handleExport}

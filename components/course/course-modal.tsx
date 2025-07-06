@@ -231,12 +231,13 @@ export function CourseModal({
                   <SelectValue placeholder="Pilih hari" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Monday">Senin</SelectItem>
-                  <SelectItem value="Tuesday">Selasa</SelectItem>
-                  <SelectItem value="Wednesday">Rabu</SelectItem>
-                  <SelectItem value="Thursday">Kamis</SelectItem>
-                  <SelectItem value="Friday">Jumat</SelectItem>
-                  <SelectItem value="Saturday">Sabtu</SelectItem>
+                  <SelectItem value="Senin">Senin</SelectItem>
+                  <SelectItem value="Selasa">Selasa</SelectItem>
+                  <SelectItem value="Rabu">Rabu</SelectItem>
+                  <SelectItem value="Kamis">Kamis</SelectItem>
+                  <SelectItem value="Jumat">Jumat</SelectItem>
+                  <SelectItem value="Sabtu">Sabtu</SelectItem>
+                  <SelectItem value="Minggu">Minggu</SelectItem>
                 </SelectContent>
               </Select>
               {errors.day && (

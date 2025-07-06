@@ -11,6 +11,7 @@ import { ScheduleCard } from './schedule-card';
 interface ScheduleGridProps {
   schedules: SavedSchedule[];
   isLoading: boolean;
+  activeScheduleId: string | null;
   onDelete: (schedule: SavedSchedule) => void;
   onPreview: (schedule: SavedSchedule) => void;
   onExport: (schedule: SavedSchedule) => void;
@@ -38,6 +39,7 @@ function ScheduleSkeleton() {
 export function ScheduleGrid({
   schedules,
   isLoading,
+  activeScheduleId,
   onDelete,
   onPreview,
   onExport,
@@ -59,6 +61,7 @@ export function ScheduleGrid({
         <ScheduleCard
           key={schedule.id}
           schedule={schedule}
+          isActive={schedule.id === activeScheduleId}
           onDelete={onDelete}
           onPreview={onPreview}
           onExport={onExport}
