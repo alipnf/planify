@@ -17,6 +17,7 @@ import { useUser } from '@/lib/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { SaveScheduleDialog } from '@/components/schedule/save-schedule-dialog';
 import { useMessage } from '@/lib/hooks/use-message';
+import { SelectedCourseList } from '@/components/saved/selected-course-list';
 
 interface ShareClientPageProps {
   schedule: SavedSchedule;
@@ -99,13 +100,20 @@ export function ShareClientPage({ schedule }: ShareClientPageProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <WeeklySchedule
-            courses={selectedCourses}
-            conflicts={conflicts}
-            timeSlots={timeSlots}
-            getCourseAtTime={getCourseAtTime}
-            showActions={false}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-1">
+              <SelectedCourseList selectedCourses={selectedCourses || []} />
+            </div>
+            <div className="lg:col-span-2">
+              <WeeklySchedule
+                courses={selectedCourses}
+                conflicts={conflicts}
+                timeSlots={timeSlots}
+                getCourseAtTime={getCourseAtTime}
+                showActions={false}
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
