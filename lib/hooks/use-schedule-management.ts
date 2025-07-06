@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Course } from '@/lib/types/course';
 import {
   detectTimeConflicts,
@@ -24,23 +24,26 @@ export function useScheduleManagement() {
   const timeSlots = useMemo(() => generateTimeSlots(), []);
 
   // Filter courses based on search and semester
-  const filterCourses = (courses: Course[]) => {
-    return courses.filter((course) => {
-      const matchesSearch =
-        searchQuery === '' ||
-        course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        course.lecturer.toLowerCase().includes(searchQuery.toLowerCase());
+  const filterCourses = useCallback(
+    (courses: Course[]) => {
+      return courses.filter((course) => {
+        const matchesSearch =
+          searchQuery === '' ||
+          course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          course.lecturer.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesSemester =
-        filterSemester === 'all' || course.semester === filterSemester;
+        const matchesSemester =
+          filterSemester === 'all' || course.semester === filterSemester;
 
-      return matchesSearch && matchesSemester;
-    });
-  };
+        return matchesSearch && matchesSemester;
+      });
+    },
+    [searchQuery, filterSemester]
+  );
 
   // Toggle course selection
-  const toggleCourse = (course: Course) => {
+  const toggleCourse = useCallback((course: Course) => {
     setSelectedCourses((prev) => {
       const isSelected = prev.find((c) => c.id === course.id);
       if (isSelected) {
@@ -49,22 +52,25 @@ export function useScheduleManagement() {
         return [...prev, course];
       }
     });
-  };
+  }, []);
 
   // Get course at specific day/time for preview
-  const getCourseAtTime = (day: string, time: string): Course | undefined => {
-    return findCourseAtTime(selectedCourses, day, time);
-  };
+  const getCourseAtTime = useCallback(
+    (day: string, time: string): Course | undefined => {
+      return findCourseAtTime(selectedCourses, day, time);
+    },
+    [selectedCourses]
+  );
 
   // Clear all selections
-  const clearAllSelections = () => {
+  const clearAllSelections = useCallback(() => {
     setSelectedCourses([]);
-  };
+  }, []);
 
-  // Set selected courses (for AI generation)
-  const setSelectedCoursesDirectly = (courses: Course[]) => {
+  // Set selected courses (for AI generation or loading saved schedules)
+  const setSelectedCoursesDirectly = useCallback((courses: Course[]) => {
     setSelectedCourses(courses);
-  };
+  }, []);
 
   return {
     // State
