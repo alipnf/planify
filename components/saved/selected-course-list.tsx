@@ -1,6 +1,7 @@
 import type { Course } from '@/lib/types/course';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { formatTimeRange } from '@/lib/course-utils';
 
 interface SelectedCourseListProps {
   selectedCourses: Course[];
@@ -35,7 +36,8 @@ export function SelectedCourseList({
                   {course.code} • {course.credits} SKS • {course.lecturer}
                 </div>
                 <div className="text-xs text-gray-600">
-                  {course.day}, {course.startTime}-{course.endTime} • Ruang{' '}
+                  {course.day},{' '}
+                  {formatTimeRange(course.startTime, course.endTime)} • Ruang{' '}
                   {course.room}
                 </div>
                 <Badge
