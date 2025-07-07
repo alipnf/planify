@@ -64,8 +64,9 @@ export function CourseModal({
       setValue('credits', course.credits);
       setValue('room', course.room);
       setValue('day', course.day);
-      setValue('startTime', course.startTime);
-      setValue('endTime', course.endTime);
+      // Convert time format from HH:MM:SS to HH:MM for time inputs
+      setValue('startTime', course.startTime.substring(0, 5));
+      setValue('endTime', course.endTime.substring(0, 5));
       setValue('semester', course.semester);
       setValue('category', course.category);
       setValue('class', course.class);
@@ -100,14 +101,6 @@ export function CourseModal({
       setIsLoading(false);
     }
   };
-
-  const timeOptions = [];
-  for (let hour = 7; hour <= 18; hour++) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      timeOptions.push(timeString);
-    }
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -248,21 +241,7 @@ export function CourseModal({
             {/* Start Time */}
             <div className="space-y-2">
               <Label htmlFor="startTime">Jam Mulai *</Label>
-              <Select
-                onValueChange={(value) => setValue('startTime', value)}
-                value={watchedValues.startTime}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Jam mulai" />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeOptions.map((time) => (
-                    <SelectItem key={time} value={time}>
-                      {time}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input id="startTime" type="time" {...register('startTime')} />
               {errors.startTime && (
                 <p className="text-sm text-red-600">
                   {errors.startTime.message}
@@ -273,21 +252,7 @@ export function CourseModal({
             {/* End Time */}
             <div className="space-y-2">
               <Label htmlFor="endTime">Jam Selesai *</Label>
-              <Select
-                onValueChange={(value) => setValue('endTime', value)}
-                value={watchedValues.endTime}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Jam selesai" />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeOptions.map((time) => (
-                    <SelectItem key={time} value={time}>
-                      {time}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input id="endTime" type="time" {...register('endTime')} />
               {errors.endTime && (
                 <p className="text-sm text-red-600">{errors.endTime.message}</p>
               )}

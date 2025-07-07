@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Upload, FileText, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { CreateCourseData } from '@/lib/types/course';
+import { formatTimeRange } from '@/lib/course-utils';
 
 interface ImportCoursesModalProps {
   open: boolean;
@@ -350,8 +351,9 @@ export function ImportCoursesModal({
                             {course.name}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {course.lecturer} • {course.day}, {course.startTime}
-                            -{course.endTime} • {course.room}
+                            {course.lecturer} • {course.day},{' '}
+                            {formatTimeRange(course.startTime, course.endTime)}{' '}
+                            • {course.room}
                           </div>
                         </div>
                       </div>
