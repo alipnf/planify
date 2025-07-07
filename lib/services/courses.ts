@@ -10,13 +10,13 @@ export function transformToDbFormat(
 ): Record<string, unknown> {
   const result: Record<string, unknown> = { ...data };
 
-  // Transform time fields
+  // Transform time fields and ensure HH:MM format
   if ('startTime' in data && data.startTime) {
-    result.start_time = data.startTime;
+    result.start_time = data.startTime.substring(0, 5); // Ensure HH:MM format
     delete result.startTime;
   }
   if ('endTime' in data && data.endTime) {
-    result.end_time = data.endTime;
+    result.end_time = data.endTime.substring(0, 5); // Ensure HH:MM format
     delete result.endTime;
   }
 
