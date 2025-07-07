@@ -29,10 +29,8 @@ export default function CreateSchedulePage() {
     filterSemester,
     conflicts,
     stats,
-    timeSlots,
     filterCourses,
     toggleCourse,
-    getCourseAtTime,
     clearAllSelections,
     setSelectedCoursesDirectly,
     setSearchQuery,
@@ -42,12 +40,23 @@ export default function CreateSchedulePage() {
   // Filter courses based on search and semester
   const filteredCourses = filterCourses(courses);
 
-  // Handle AI generated schedule
-  const handleAIScheduleGenerated = (aiSelectedCourses: Course[]) => {
+  // Handle AI schedule "Edit" action
+  const handleAIEdit = (aiSelectedCourses: Course[]) => {
     setSelectedCoursesDirectly(aiSelectedCourses);
+    setActiveTab('manual');
   };
 
-  // Handle save schedule
+  // Handle AI schedule "Save" action
+  const handleAISave = (aiSelectedCourses: Course[]) => {
+    setSelectedCoursesDirectly(aiSelectedCourses);
+    if (aiSelectedCourses.length === 0) {
+      showError('Jadwal yang dipilih kosong.');
+      return;
+    }
+    setIsDialogOpen(true);
+  };
+
+  // Handle save schedule (used by manual save button)
   const handleSaveSchedule = () => {
     if (selectedCourses.length === 0) {
       showError('Tidak ada mata kuliah yang dipilih untuk disimpan.');
@@ -122,8 +131,6 @@ export default function CreateSchedulePage() {
                 <WeeklySchedule
                   courses={selectedCourses}
                   conflicts={conflicts}
-                  timeSlots={timeSlots}
-                  getCourseAtTime={getCourseAtTime}
                   onResetSchedule={clearAllSelections}
                   onSaveSchedule={handleSaveSchedule}
                 />
@@ -134,7 +141,8 @@ export default function CreateSchedulePage() {
           <TabsContent value="ai" className="space-y-6">
             <AIScheduler
               courses={courses}
-              onScheduleGenerated={handleAIScheduleGenerated}
+              onEdit={handleAIEdit}
+              onSave={handleAISave}
               isLoading={isLoading}
             />
           </TabsContent>
