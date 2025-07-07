@@ -3,8 +3,6 @@ import { Course } from '@/lib/types/course';
 import {
   detectTimeConflicts,
   calculateScheduleStats,
-  generateTimeSlots,
-  findCourseAtTime,
 } from '@/lib/schedule-utils';
 
 export function useScheduleManagement() {
@@ -21,7 +19,6 @@ export function useScheduleManagement() {
     () => calculateScheduleStats(selectedCourses),
     [selectedCourses]
   );
-  const timeSlots = useMemo(() => generateTimeSlots(), []);
 
   // Filter courses based on search and semester
   const filterCourses = useCallback(
@@ -54,14 +51,6 @@ export function useScheduleManagement() {
     });
   }, []);
 
-  // Get course at specific day/time for preview
-  const getCourseAtTime = useCallback(
-    (day: string, time: string): Course | undefined => {
-      return findCourseAtTime(selectedCourses, day, time);
-    },
-    [selectedCourses]
-  );
-
   // Clear all selections
   const clearAllSelections = useCallback(() => {
     setSelectedCourses([]);
@@ -81,12 +70,10 @@ export function useScheduleManagement() {
     // Computed values
     conflicts,
     stats,
-    timeSlots,
 
     // Functions
     filterCourses,
     toggleCourse,
-    getCourseAtTime,
     clearAllSelections,
     setSelectedCoursesDirectly,
 
