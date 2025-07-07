@@ -4,20 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Course } from '@/lib/types/course';
 import { daysOfWeek, getCourseColor } from '@/lib/schedule-utils';
+import { formatTimeRange } from '@/lib/course-utils';
+import React from 'react';
 
 interface TimeConflict {
-  courses: [Course, Course];
   course1: Course;
   course2: Course;
-  day: string;
-  time: string;
 }
 
 interface WeeklyScheduleProps {
   courses: Course[];
   conflicts: TimeConflict[];
-  timeSlots: string[];
-  getCourseAtTime: (day: string, time: string) => Course | undefined;
   onResetSchedule?: () => void;
   onSaveSchedule?: () => void;
   showActions?: boolean;
@@ -26,12 +23,21 @@ interface WeeklyScheduleProps {
 export function WeeklySchedule({
   courses,
   conflicts,
-  timeSlots,
-  getCourseAtTime,
   onResetSchedule,
   onSaveSchedule,
   showActions = true,
 }: WeeklyScheduleProps) {
+  // Group courses by day
+  const coursesByDay = daysOfWeek.reduce(
+    (acc, day) => {
+      acc[day] = courses
+        .filter((course) => course.day === day)
+        .sort((a, b) => a.startTime.localeCompare(b.startTime));
+      return acc;
+    },
+    {} as Record<string, Course[]>
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -40,8 +46,6 @@ export function WeeklySchedule({
             <Calendar className="h-5 w-5" />
             <span>Jadwal Mingguan</span>
           </CardTitle>
-
-          {/* Action Buttons - Only show if showActions is true and callbacks are provided */}
           {showActions && onResetSchedule && onSaveSchedule && (
             <div className="flex items-center space-x-2">
               <Button
@@ -53,7 +57,6 @@ export function WeeklySchedule({
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Reset Jadwal
               </Button>
-
               <Button
                 size="sm"
                 onClick={onSaveSchedule}
@@ -71,59 +74,57 @@ export function WeeklySchedule({
           <Alert variant="destructive" className="mb-4">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Terdapat {conflicts.length} bentrok waktu. Klik mata kuliah yang
-              bentrok untuk melihat detail.
+              Terdapat {conflicts.length} bentrok waktu. Periksa mata kuliah
+              yang ditandai.
             </AlertDescription>
           </Alert>
         )}
 
-        <div className="overflow-x-auto">
-          <div className="min-w-[800px]">
-            <div className="grid grid-cols-8 gap-1 mb-2">
-              <div className="p-2 text-xs font-medium text-gray-500">Waktu</div>
-              {daysOfWeek.map((day) => (
-                <div
-                  key={day}
-                  className="p-2 text-xs font-medium text-gray-500 text-center"
-                >
+        <div className="overflow-x-auto pb-2">
+          <div className="flex space-x-3 min-w-[900px]">
+            {daysOfWeek.map((day) => (
+              <div key={day} className="flex-1 min-w-[120px]">
+                <div className="p-2 text-sm font-semibold text-center text-gray-700 bg-gray-100 rounded-t-lg">
                   {day}
                 </div>
-              ))}
-            </div>
-
-            {timeSlots.map((time) => (
-              <div key={time} className="grid grid-cols-8 gap-1 mb-1">
-                <div className="p-2 text-xs text-gray-500 border-r">{time}</div>
-                {daysOfWeek.map((day) => {
-                  const course = getCourseAtTime(day, time);
-                  const isConflicted =
-                    course &&
-                    conflicts.some(
-                      (conflict) =>
-                        conflict.course1.id === course.id ||
-                        conflict.course2.id === course.id
-                    );
-
-                  return (
-                    <div
-                      key={`${day}-${time}`}
-                      className="min-h-[40px] border border-gray-100"
-                    >
-                      {course && (
+                <div className="p-2 space-y-2 bg-white border-x border-b rounded-b-lg min-h-[100px]">
+                  {coursesByDay[day].length > 0 ? (
+                    coursesByDay[day].map((course) => {
+                      const isConflicted = conflicts.some(
+                        (conflict) =>
+                          conflict.course1.id === course.id ||
+                          conflict.course2.id === course.id
+                      );
+                      return (
                         <div
-                          className={`p-1 rounded text-xs h-full ${getCourseColor(course.code)} ${
-                            isConflicted ? 'ring-2 ring-red-400' : ''
+                          key={course.id}
+                          className={`p-2 rounded-lg text-xs ${getCourseColor(
+                            course.code
+                          )} ${
+                            isConflicted
+                              ? 'ring-2 ring-offset-1 ring-red-500'
+                              : ''
                           }`}
                         >
-                          <div className="font-medium truncate">
+                          <div className="font-bold truncate">
+                            {course.name}
+                          </div>
+                          <div className="truncate font-medium">
                             {course.code}-{course.class}
+                          </div>
+                          <div className="mt-1">
+                            {formatTimeRange(course.startTime, course.endTime)}
                           </div>
                           <div className="truncate">{course.room}</div>
                         </div>
-                      )}
+                      );
+                    })
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-xs text-gray-400 pt-4">
+                      Tidak ada kelas
                     </div>
-                  );
-                })}
+                  )}
+                </div>
               </div>
             ))}
           </div>
