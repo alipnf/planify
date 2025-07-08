@@ -27,6 +27,8 @@ export default function CreateSchedulePage() {
     selectedCourses,
     searchQuery,
     filterSemester,
+    filterClass,
+    groupByCode,
     conflicts,
     stats,
     filterCourses,
@@ -35,6 +37,8 @@ export default function CreateSchedulePage() {
     setSelectedCoursesDirectly,
     setSearchQuery,
     setFilterSemester,
+    setFilterClass,
+    setGroupByCode,
   } = useScheduleManagement();
 
   // Filter courses based on search and semester
@@ -109,8 +113,8 @@ export default function CreateSchedulePage() {
           </TabsList>
 
           <TabsContent value="manual" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column - Course Selection */}
+            <div className="flex flex-col space-y-6">
+              {/* Course Selection Panel now on top */}
               <div className="lg:col-span-1">
                 <CourseSelectionPanel
                   courses={filteredCourses}
@@ -120,21 +124,23 @@ export default function CreateSchedulePage() {
                   onSearchChange={setSearchQuery}
                   filterSemester={filterSemester}
                   onFilterChange={setFilterSemester}
+                  filterClass={filterClass}
+                  onClassChange={setFilterClass}
+                  groupByCode={groupByCode}
+                  onGroupByCodeChange={setGroupByCode}
                   conflicts={conflicts}
                   stats={stats}
                   isLoading={isLoading}
                 />
               </div>
 
-              {/* Right Column - Schedule View */}
-              <div className="lg:col-span-2">
-                <WeeklySchedule
-                  courses={selectedCourses}
-                  conflicts={conflicts}
-                  onResetSchedule={clearAllSelections}
-                  onSaveSchedule={handleSaveSchedule}
-                />
-              </div>
+              {/* Weekly Schedule now below */}
+              <WeeklySchedule
+                courses={selectedCourses}
+                conflicts={conflicts}
+                onResetSchedule={clearAllSelections}
+                onSaveSchedule={handleSaveSchedule}
+              />
             </div>
           </TabsContent>
 
