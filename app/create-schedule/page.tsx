@@ -1,29 +1,22 @@
 'use client';
 
-import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Hand, Bot } from 'lucide-react';
 import { WeeklySchedule } from '@/components/schedule/weekly-schedule';
 import { CourseSelectionPanel } from '@/components/schedule/course-selection-panel';
 import { AIScheduler } from '@/components/schedule/ai-scheduler';
-import { useCourseManagement } from '@/lib/hooks/use-course-management';
-import { useScheduleManagement } from '@/lib/hooks/use-schedule-management';
-import { Course } from '@/lib/types/course';
 import { SaveScheduleDialog } from '@/components/schedule/save-schedule-dialog';
-import { saveSchedule } from '@/lib/services/schedules';
-import { useMessage } from '@/lib/hooks/use-message';
+import { useCreateSchedule } from '@/lib/hooks/use-create-schedule';
 
 export default function CreateSchedulePage() {
-  const [activeTab, setActiveTab] = useState('manual');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const { showSuccess, showError } = useMessage();
-
-  // Course management
-  const { courses, isLoading } = useCourseManagement();
-
-  // Schedule management
   const {
+    activeTab,
+    setActiveTab,
+    isDialogOpen,
+    setIsDialogOpen,
+    isSaving,
+    courses,
+    isLoading,
     selectedCourses,
     searchQuery,
     filterSemester,
@@ -31,60 +24,18 @@ export default function CreateSchedulePage() {
     groupByCode,
     conflicts,
     stats,
-    filterCourses,
+    filteredCourses,
     toggleCourse,
     clearAllSelections,
-    setSelectedCoursesDirectly,
     setSearchQuery,
     setFilterSemester,
     setFilterClass,
     setGroupByCode,
-  } = useScheduleManagement();
-
-  // Filter courses based on search and semester
-  const filteredCourses = filterCourses(courses);
-
-  // Handle AI schedule "Edit" action
-  const handleAIEdit = (aiSelectedCourses: Course[]) => {
-    setSelectedCoursesDirectly(aiSelectedCourses);
-    setActiveTab('manual');
-  };
-
-  // Handle AI schedule "Save" action
-  const handleAISave = (aiSelectedCourses: Course[]) => {
-    setSelectedCoursesDirectly(aiSelectedCourses);
-    if (aiSelectedCourses.length === 0) {
-      showError('Jadwal yang dipilih kosong.');
-      return;
-    }
-    setIsDialogOpen(true);
-  };
-
-  // Handle save schedule (used by manual save button)
-  const handleSaveSchedule = () => {
-    if (selectedCourses.length === 0) {
-      showError('Tidak ada mata kuliah yang dipilih untuk disimpan.');
-      return;
-    }
-    setIsDialogOpen(true);
-  };
-
-  const handleConfirmSave = async (scheduleName: string) => {
-    setIsSaving(true);
-    try {
-      await saveSchedule(scheduleName, selectedCourses);
-      showSuccess(`Jadwal "${scheduleName}" berhasil disimpan.`);
-      setIsDialogOpen(false);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Terjadi kesalahan tidak dikenal.';
-      showError(errorMessage);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    handleAIEdit,
+    handleAISave,
+    handleSaveSchedule,
+    handleConfirmSave,
+  } = useCreateSchedule();
 
   return (
     <>
@@ -114,7 +65,6 @@ export default function CreateSchedulePage() {
 
           <TabsContent value="manual" className="space-y-6">
             <div className="flex flex-col space-y-6">
-              {/* Course Selection Panel now on top */}
               <div className="lg:col-span-1">
                 <CourseSelectionPanel
                   courses={filteredCourses}
@@ -134,7 +84,6 @@ export default function CreateSchedulePage() {
                 />
               </div>
 
-              {/* Weekly Schedule now below */}
               <WeeklySchedule
                 courses={selectedCourses}
                 conflicts={conflicts}
