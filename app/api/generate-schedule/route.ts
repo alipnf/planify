@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  const prompt = `Berdasarkan deskripsi pengguna: "${userPrompt}", buat 3 sampai 5 opsi jadwal kuliah yang bebas bentrok waktu antar mata kuliah. Setiap opsi harus berupa JSON array of arrays yang berisi objek mata kuliah lengkap dengan properti id, code, name, class, day, startTime, endTime, dan credits. Berikut data mata kuliah yang tersedia: ${JSON.stringify(
+  const prompt = `Berdasarkan deskripsi pengguna: "${userPrompt}", buat 3 sampai 5 opsi jadwal kuliah yang bebas bentrok waktu antar mata kuliah. Setiap opsi harus berupa JSON array of arrays yang berisi objek mata kuliah lengkap dengan semua propertinya: id, code, name, class, day, startTime, endTime, credits, category, lecturer, dan room. Berikut data mata kuliah yang tersedia: ${JSON.stringify(
     courses
   )}. Sesuaikan jadwal dengan preferensi: ${JSON.stringify(preferences)}. Response harus hanya JSON tanpa teks penjelasan (contoh: [[{id:"...",code:"...",...}, {...}], [...], [...]]).`;
 
