@@ -12,14 +12,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
 import { Course } from '@/lib/types/course';
-import {
-  detectTimeConflicts,
-  generateTimeSlots,
-  daysOfWeek,
-  findCourseAtTime,
-} from '@/lib/schedule-utils';
+import { detectTimeConflicts, daysOfWeek } from '@/lib/schedule-utils';
+import { formatTimeRange } from '@/lib/course-utils';
 import { WeeklySchedule } from './weekly-schedule';
 import { Textarea } from '../ui/textarea';
+import { CategoryBadge } from '../ui/category-badge';
 
 interface SchedulePreferences {
   targetCredits: number;
@@ -39,14 +36,16 @@ interface ScheduleOptionView {
 
 export interface AISchedulerProps {
   courses: Course[];
-  onScheduleGenerated: (selectedCourses: Course[]) => void;
+  onEdit: (selectedCourses: Course[]) => void;
+  onSave: (selectedCourses: Course[]) => void;
   isLoading?: boolean;
   hidePrompt?: boolean;
 }
 
 export function AIScheduler({
   courses,
-  onScheduleGenerated,
+  onEdit,
+  onSave,
   isLoading = false,
 }: AISchedulerProps) {
   const preferences: SchedulePreferences = {
@@ -65,13 +64,8 @@ export function AIScheduler({
   );
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
   const [previewCourses, setPreviewCourses] = useState<Course[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
   const [prompt, setPrompt] = useState('');
-
-  // Get course at specific day/time for preview
-  const getCourseAtTime = (day: string, time: string): Course | undefined => {
-    return findCourseAtTime(previewCourses, day, time);
-  };
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Generate schedule options via Gemini API
   const generateScheduleOptions = async () => {
@@ -81,6 +75,7 @@ export function AIScheduler({
     setScheduleOptions([]);
     setSelectedOptionId(null);
     setPreviewCourses([]);
+    setErrorMessage(null);
 
     try {
       const response = await fetch('/api/generate-schedule', {
@@ -88,24 +83,30 @@ export function AIScheduler({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ courses, preferences, userPrompt: prompt }),
       });
-      const result = (await response.json()) as {
-        options: Course[][];
-        error?: string;
-      };
+
+      const result = await response.json();
+
       if (!response.ok) {
-        console.error('Error generating schedule options:', result.error);
+        setErrorMessage(
+          result.error || 'Terjadi kesalahan saat membuat jadwal.'
+        );
+        console.error('Error generating schedule options:', result.details);
         return;
       }
-      const schedules = result.options;
+      const schedules = result.options as Course[][];
       const mappedOptions: ScheduleOptionView[] = schedules.map(
-        (courseArr, index) => ({
+        (courseArr: Course[], index: number) => ({
           id: index + 1,
           courses: courseArr,
-          totalCredits: courseArr.reduce((sum, c) => sum + c.credits, 0),
+          totalCredits: courseArr.reduce(
+            (sum: number, c: Course) => sum + c.credits,
+            0
+          ),
         })
       );
       setScheduleOptions(mappedOptions);
     } catch (error) {
+      setErrorMessage('Gagal terhubung ke server. Silakan coba lagi.');
       console.error('Error generating schedule options:', error);
     } finally {
       setIsGenerating(false);
@@ -125,21 +126,6 @@ export function AIScheduler({
     setSelectedOptionId(option.id);
   };
 
-  const handleSelectAndSave = async (option: ScheduleOptionView) => {
-    setIsSaving(true);
-    try {
-      onScheduleGenerated(option.courses);
-      setPreviewCourses(option.courses);
-      setSelectedOptionId(option.id);
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    } catch (error) {
-      console.error('Error saving schedule:', error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <Card>
@@ -155,7 +141,6 @@ export function AIScheduler({
   }
 
   const previewConflicts = detectTimeConflicts(previewCourses);
-  const timeSlots = generateTimeSlots();
 
   return (
     <div className="space-y-6">
@@ -200,6 +185,13 @@ export function AIScheduler({
               </>
             )}
           </Button>
+
+          {errorMessage && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
 
           {/* Info Alert */}
           <Alert>
@@ -297,26 +289,30 @@ export function AIScheduler({
                             <div className="font-medium">{course.name}</div>
                             <div className="text-xs text-gray-500">
                               {course.code} • Kelas {course.class} •{' '}
-                              {course.day} • {course.startTime}-{course.endTime}
+                              {course.day} •{' '}
+                              {formatTimeRange(
+                                course.startTime,
+                                course.endTime
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
                             <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
                               {course.credits} SKS
                             </span>
-                            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded">
-                              {course.category}
-                            </span>
+                            <CategoryBadge
+                              category={course.category}
+                              className="text-xs"
+                            />
                           </div>
                         </div>
                       ))}
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex space-x-2">
+                    <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:space-x-2">
                       <Button
                         variant="outline"
-                        size="sm"
                         onClick={() => handlePreviewOption(option)}
                         className="flex-1"
                       >
@@ -324,22 +320,19 @@ export function AIScheduler({
                         Pratinjau
                       </Button>
                       <Button
-                        size="sm"
-                        onClick={() => handleSelectAndSave(option)}
+                        variant="outline"
+                        onClick={() => onEdit(option.courses)}
                         className="flex-1"
-                        disabled={isSaving}
                       >
-                        {isSaving ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Menyimpan...
-                          </>
-                        ) : (
-                          <>
-                            <Save className="mr-2 h-4 w-4" />
-                            Pilih & Simpan
-                          </>
-                        )}
+                        <Wand2 className="mr-2 h-4 w-4" />
+                        Edit
+                      </Button>
+                      <Button
+                        onClick={() => onSave(option.courses)}
+                        className="flex-1"
+                      >
+                        <Save className="mr-2 h-4 w-4" />
+                        Simpan
                       </Button>
                     </div>
                   </CardContent>
@@ -363,8 +356,6 @@ export function AIScheduler({
               <WeeklySchedule
                 courses={previewCourses}
                 conflicts={previewConflicts}
-                timeSlots={timeSlots}
-                getCourseAtTime={getCourseAtTime}
                 showActions={false}
               />
             ) : (

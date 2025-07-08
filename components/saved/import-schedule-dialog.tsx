@@ -7,30 +7,48 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, FileText, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { CreateCourseData } from '@/lib/types/course';
-import { formatTimeRange } from '@/lib/course-utils';
-import { CategoryBadge } from '@/components/ui/category-badge';
+import { Course } from '@/lib/types/course';
+import { z } from 'zod';
 
-interface ImportCoursesModalProps {
+interface ImportScheduleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onImport: (courses: CreateCourseData[]) => void;
+  onImport: (scheduleName: string, courses: Course[]) => Promise<void>;
 }
 
-export function ImportCoursesModal({
+export function ImportScheduleDialog({
   open,
   onOpenChange,
   onImport,
-}: ImportCoursesModalProps) {
+}: ImportScheduleDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [previewData, setPreviewData] = useState<CreateCourseData[] | null>(
-    null
-  );
+  const [previewData, setPreviewData] = useState<Course[] | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [scheduleName, setScheduleName] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+
+  // Schema yang lebih fleksibel untuk import
+  const importedScheduleSchema = z.array(
+    z.object({
+      id: z.string().optional(),
+      code: z.string().min(1, 'Kode mata kuliah harus diisi'),
+      name: z.string().min(1, 'Nama mata kuliah harus diisi'),
+      lecturer: z.string().min(1, 'Nama dosen harus diisi'),
+      credits: z.number().min(1, 'SKS minimal 1').max(20, 'SKS maksimal 20'),
+      room: z.string().min(1, 'Ruang harus diisi'),
+      day: z.string().min(1, 'Hari harus diisi'),
+      startTime: z.string().min(1, 'Waktu mulai harus diisi'),
+      endTime: z.string().min(1, 'Waktu selesai harus diisi'),
+      semester: z.string().min(1, 'Semester harus diisi'),
+      category: z.enum(['wajib', 'pilihan']).optional(),
+      class: z.string().min(1, 'Kelas harus diisi'),
+    })
+  );
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -39,6 +57,7 @@ export function ImportCoursesModal({
         setSelectedFile(file);
         setPreviewData(null);
         setValidationErrors([]);
+        setScheduleName('');
         processFile(file);
       } else {
         toast.error('Pilih file JSON yang valid');
@@ -52,164 +71,66 @@ export function ImportCoursesModal({
 
     try {
       const text = await file.text();
-      const data = JSON.parse(text);
+      const parsedJson = JSON.parse(text);
 
-      // Check if it's a schedule file
       if (
-        typeof data === 'object' &&
-        data !== null &&
-        !Array.isArray(data) &&
-        data.type === 'planify-schedule'
+        typeof parsedJson !== 'object' ||
+        parsedJson === null ||
+        Array.isArray(parsedJson) ||
+        parsedJson.type !== 'planify-schedule'
       ) {
         setValidationErrors([
-          'File ini adalah file jadwal, bukan file mata kuliah. Silakan gunakan fitur "Impor Jadwal".',
+          'File tidak valid. Pastikan Anda mengimpor file jadwal yang diekspor dari Planify.',
         ]);
         setPreviewData(null);
         return;
       }
 
-      // Validate and normalize data
-      const { validatedData, errors } = validateImportData(data);
+      const data = parsedJson.data;
+      const validatedData = importedScheduleSchema.parse(data);
 
-      if (errors.length > 0) {
+      // Add IDs if missing and ensure category has default value
+      const dataWithIds: Course[] = validatedData.map((course) => ({
+        ...course,
+        id: course.id || crypto.randomUUID(),
+        category: course.category || 'wajib',
+      }));
+
+      setPreviewData(dataWithIds);
+      setValidationErrors([]);
+    } catch (err) {
+      console.error('Import validation error:', err);
+
+      if (err instanceof z.ZodError) {
+        // Extract specific validation errors
+        const errors = err.errors.map((error) => {
+          const path = error.path.join('.');
+          return `${path}: ${error.message}`;
+        });
         setValidationErrors(errors);
-        setPreviewData(null);
       } else {
-        setPreviewData(validatedData);
-        setValidationErrors([]);
+        setValidationErrors([
+          'File tidak valid atau format tidak sesuai. Pastikan file adalah JSON yang valid dengan format yang benar.',
+        ]);
       }
-    } catch {
-      setValidationErrors(['File JSON tidak valid atau rusak']);
       setPreviewData(null);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Type guard functions
-  const isValidString = (value: unknown): value is string => {
-    return typeof value === 'string' && value.trim().length > 0;
-  };
-
-  const isValidNumber = (value: unknown): value is number => {
-    return typeof value === 'number' && !isNaN(value);
-  };
-
-  const isValidCategory = (value: unknown): value is 'wajib' | 'pilihan' => {
-    return value === 'wajib' || value === 'pilihan';
-  };
-
-  const validateImportData = (
-    data: unknown
-  ): { validatedData: CreateCourseData[] | null; errors: string[] } => {
-    const errors: string[] = [];
-
-    // Check if data is array or single object
-    let rawCourses: unknown[] = [];
-    if (Array.isArray(data)) {
-      rawCourses = data;
-    } else if (data && typeof data === 'object') {
-      rawCourses = [data];
-    } else {
-      errors.push('Format data tidak valid');
-      return { validatedData: null, errors };
-    }
-
-    const validatedCourses: CreateCourseData[] = [];
-
-    rawCourses.forEach((rawCourse, index) => {
-      const courseErrors: string[] = [];
-      const courseIndex = index + 1;
-
-      // Type assertion to access properties
-      const course = rawCourse as Record<string, unknown>;
-
-      // Validate required fields
-      if (!isValidString(course.code)) {
-        courseErrors.push(
-          `Mata kuliah ${courseIndex}: Kode mata kuliah tidak valid`
-        );
+  const handleImport = async () => {
+    if (previewData && previewData.length > 0 && scheduleName.trim()) {
+      setIsImporting(true);
+      try {
+        await onImport(scheduleName.trim(), previewData);
+        // Toast dan penutupan modal ditangani oleh parent component
+      } catch (error) {
+        // Error toast sudah ditangani oleh parent, kita hanya perlu log di sini
+        console.error('Gagal melakukan impor:', error);
+      } finally {
+        setIsImporting(false);
       }
-
-      if (!isValidString(course.name)) {
-        courseErrors.push(
-          `Mata kuliah ${courseIndex}: Nama mata kuliah tidak valid`
-        );
-      }
-
-      if (!isValidString(course.lecturer)) {
-        courseErrors.push(`Mata kuliah ${courseIndex}: Nama dosen tidak valid`);
-      }
-
-      if (
-        !isValidNumber(course.credits) ||
-        course.credits < 1 ||
-        course.credits > 20
-      ) {
-        courseErrors.push(
-          `Mata kuliah ${courseIndex}: SKS tidak valid (harus 1-20)`
-        );
-      }
-
-      if (!isValidString(course.room)) {
-        courseErrors.push(`Mata kuliah ${courseIndex}: Ruang tidak valid`);
-      }
-
-      if (!isValidString(course.day)) {
-        courseErrors.push(`Mata kuliah ${courseIndex}: Hari tidak valid`);
-      }
-
-      if (!isValidString(course.startTime) || !isValidString(course.endTime)) {
-        courseErrors.push(`Mata kuliah ${courseIndex}: Waktu tidak valid`);
-      }
-
-      if (!isValidString(course.semester)) {
-        courseErrors.push(`Mata kuliah ${courseIndex}: Semester tidak valid`);
-      }
-
-      if (!isValidCategory(course.category)) {
-        courseErrors.push(
-          `Mata kuliah ${courseIndex}: Kategori tidak valid (harus 'wajib' atau 'pilihan')`
-        );
-      }
-
-      if (!isValidString(course.class)) {
-        courseErrors.push(`Mata kuliah ${courseIndex}: Kelas tidak valid`);
-      }
-
-      if (courseErrors.length === 0) {
-        // Create validated course data (no ID needed for import)
-        const validatedCourse: CreateCourseData = {
-          code: course.code as string,
-          name: course.name as string,
-          lecturer: course.lecturer as string,
-          credits: course.credits as number,
-          room: course.room as string,
-          day: course.day as string,
-          startTime: course.startTime as string,
-          endTime: course.endTime as string,
-          semester: course.semester as string,
-          category: course.category as 'wajib' | 'pilihan',
-          class: course.class as string,
-        };
-        validatedCourses.push(validatedCourse);
-      } else {
-        errors.push(...courseErrors);
-      }
-    });
-
-    if (validatedCourses.length === 0 && errors.length === 0) {
-      errors.push('Tidak ada mata kuliah valid yang ditemukan');
-    }
-
-    return { validatedData: validatedCourses, errors };
-  };
-
-  const handleImport = () => {
-    if (previewData && previewData.length > 0) {
-      onImport(previewData);
-      handleReset();
-      toast.success(`${previewData.length} mata kuliah berhasil diimpor`);
     }
   };
 
@@ -218,6 +139,8 @@ export function ImportCoursesModal({
     setPreviewData(null);
     setValidationErrors([]);
     setIsProcessing(false);
+    setScheduleName('');
+    setIsImporting(false);
   };
 
   const handleClose = () => {
@@ -227,15 +150,14 @@ export function ImportCoursesModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Upload className="h-5 w-5" />
-            <span>Import Mata Kuliah</span>
+            <span>Import Jadwal</span>
           </DialogTitle>
           <DialogDescription>
-            Upload file JSON yang berisi data mata kuliah untuk diimpor ke
-            sistem
+            Upload file JSON yang berisi data jadwal untuk diimpor ke sistem
           </DialogDescription>
         </DialogHeader>
 
@@ -295,7 +217,7 @@ export function ImportCoursesModal({
                 <AlertTriangle className="h-5 w-5 text-red-600" />
                 <span className="font-medium text-red-800">Error Validasi</span>
               </div>
-              <div className="space-y-1 max-h-40 overflow-y-auto">
+              <div className="space-y-1">
                 {validationErrors.map((error, index) => (
                   <div key={index} className="text-sm text-red-700">
                     • {error}
@@ -315,6 +237,7 @@ export function ImportCoursesModal({
                 </span>
               </div>
 
+              {/* Schedule Preview */}
               <div className="border rounded-lg overflow-hidden">
                 <div className="bg-gray-50 px-4 py-2 border-b">
                   <h4 className="font-medium">
@@ -336,21 +259,33 @@ export function ImportCoursesModal({
                             <span className="text-sm text-gray-600">
                               • {course.credits} SKS
                             </span>
-                            <CategoryBadge category={course.category} />
                           </div>
                           <div className="text-sm text-gray-700 mb-1">
                             {course.name}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {course.lecturer} • {course.day},{' '}
-                            {formatTimeRange(course.startTime, course.endTime)}{' '}
-                            • {course.room}
+                            {course.lecturer} • {course.day}, {course.startTime}
+                            -{course.endTime} • {course.room}
                           </div>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Schedule Name Input */}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="schedule-name" className="text-right">
+                  Nama Jadwal *
+                </Label>
+                <Input
+                  id="schedule-name"
+                  value={scheduleName}
+                  onChange={(e) => setScheduleName(e.target.value)}
+                  className="col-span-3"
+                  placeholder="Contoh: Jadwal Semester Genap 2024"
+                />
               </div>
             </div>
           )}
@@ -368,6 +303,7 @@ export function ImportCoursesModal({
                   setSelectedFile(null);
                   setPreviewData(null);
                   setValidationErrors([]);
+                  setScheduleName('');
                 }}
               >
                 <X className="h-4 w-4 mr-2" />
@@ -378,10 +314,15 @@ export function ImportCoursesModal({
             {previewData && previewData.length > 0 && (
               <Button
                 onClick={handleImport}
+                disabled={!scheduleName.trim() || isImporting}
                 className="bg-green-600 hover:bg-green-700"
               >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Import {previewData.length} Mata Kuliah
+                {isImporting ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                ) : (
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                )}
+                {isImporting ? 'Mengimpor...' : 'Import Jadwal'}
               </Button>
             )}
           </div>
@@ -390,3 +331,4 @@ export function ImportCoursesModal({
     </Dialog>
   );
 }
+

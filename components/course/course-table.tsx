@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Course } from '@/lib/types/course';
-import { getFullCourseCode } from '@/lib/course-utils';
+import { getFullCourseCode, formatTimeRange } from '@/lib/course-utils';
+import { CategoryBadge } from '@/components/ui/category-badge';
 
 interface CourseTableProps {
   courses: Course[];
@@ -213,24 +214,16 @@ export function CourseTable({
                               <div className="text-sm">
                                 <div>{course.day}</div>
                                 <div className="text-gray-500">
-                                  {course.startTime} - {course.endTime}
+                                  {formatTimeRange(
+                                    course.startTime,
+                                    course.endTime
+                                  )}
                                 </div>
                               </div>
                             </TableCell>
                             <TableCell>{course.room}</TableCell>
                             <TableCell>
-                              <Badge
-                                variant="default"
-                                className={
-                                  course.category === 'wajib'
-                                    ? 'bg-green-100 text-green-800 border-green-200'
-                                    : 'bg-blue-100 text-blue-800 border-blue-200'
-                                }
-                              >
-                                {course.category === 'wajib'
-                                  ? 'Wajib'
-                                  : 'Pilihan'}
-                              </Badge>
+                              <CategoryBadge category={course.category} />
                             </TableCell>
                             <TableCell>
                               <div className="flex space-x-1">
@@ -292,22 +285,13 @@ export function CourseTable({
                         <div className="text-sm">
                           <div>{course.day}</div>
                           <div className="text-gray-500">
-                            {course.startTime} - {course.endTime}
+                            {formatTimeRange(course.startTime, course.endTime)}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>{course.room}</TableCell>
                       <TableCell>
-                        <Badge
-                          variant="default"
-                          className={
-                            course.category === 'wajib'
-                              ? 'bg-green-100 text-green-800 border-green-200'
-                              : 'bg-blue-100 text-blue-800 border-blue-200'
-                          }
-                        >
-                          {course.category === 'wajib' ? 'Wajib' : 'Pilihan'}
-                        </Badge>
+                        <CategoryBadge category={course.category} />
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-1">

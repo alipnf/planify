@@ -84,3 +84,15 @@ export const getAvailableClasses = (courses: Course[]): string[] => {
   const classes = [...new Set(courses.map((c) => c.class))].sort();
   return classes;
 };
+
+export const formatTime = (time: string): string => {
+  // Handles both HH:MM:SS and HH:MM, returns HH:MM
+  if (time && time.length >= 5) {
+    return time.substring(0, 5);
+  }
+  return time; // Return original if format is unexpected
+};
+
+export const formatTimeRange = (startTime: string, endTime: string): string => {
+  return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+};

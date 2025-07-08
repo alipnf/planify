@@ -8,7 +8,7 @@ import {
   Wand2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import FeatureCard from '@/components/feature-card';
+import FeatureCard from '@/components/ui/feature-card';
 
 export default function Home() {
   return (

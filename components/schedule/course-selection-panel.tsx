@@ -1,4 +1,4 @@
-import { Plus, Minus, Calendar } from 'lucide-react';
+import { Plus, Minus, Calendar, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -10,8 +10,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Course } from '@/lib/types/course';
+import { formatTimeRange } from '@/lib/course-utils';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import {
+  getAvailableClasses,
+  groupCoursesByCode,
+  sortCourseClasses,
+  getFullCourseCode,
+} from '@/lib/course-utils';
+import React from 'react';
+import { CategoryBadge } from '@/components/ui/category-badge';
 
 interface TimeConflict {
   courses: [Course, Course];
@@ -43,6 +54,10 @@ interface CourseSelectionPanelProps {
   onSearchChange: (query: string) => void;
   filterSemester: string;
   onFilterChange: (semester: string) => void;
+  filterClass: string;
+  onClassChange: (classValue: string) => void;
+  groupByCode: boolean;
+  onGroupByCodeChange: (group: boolean) => void;
   conflicts: TimeConflict[];
   stats: ScheduleStats;
   isLoading?: boolean;
@@ -56,10 +71,30 @@ export function CourseSelectionPanel({
   onSearchChange,
   filterSemester,
   onFilterChange,
+  filterClass,
+  onClassChange,
+  groupByCode,
+  onGroupByCodeChange,
   conflicts,
   stats,
   isLoading = false,
 }: CourseSelectionPanelProps) {
+  const availableClasses = React.useMemo(
+    () => getAvailableClasses(courses),
+    [courses]
+  );
+  const groupedCourses = React.useMemo(() => {
+    if (!groupByCode) return null;
+    const grouped = groupCoursesByCode(courses);
+    return Object.entries(grouped)
+      .map(([code, coursesInGroup]) => ({
+        code,
+        courses: sortCourseClasses(coursesInGroup),
+        totalClasses: coursesInGroup.length,
+      }))
+      .sort((a, b) => a.code.localeCompare(b.code));
+  }, [courses, groupByCode]);
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -157,107 +192,151 @@ export function CourseSelectionPanel({
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Search and Filter */}
-          <div className="space-y-3">
-            <Input
-              placeholder="Cari mata kuliah..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-            />
+          <div className="space-y-4">
+            <div className="flex flex-col gap-3 lg:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Input
+                  placeholder="Cari mata kuliah..."
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="h-10 w-full pl-9"
+                />
+              </div>
 
-            <Select value={filterSemester} onValueChange={onFilterChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter Semester" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Semester</SelectItem>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                  <SelectItem key={sem} value={sem.toString()}>
-                    Semester {sem}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <Select value={filterSemester} onValueChange={onFilterChange}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Filter Semester" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Semester</SelectItem>
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                      <SelectItem key={sem} value={sem.toString()}>
+                        Semester {sem}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={filterClass}
+                  onValueChange={onClassChange}
+                  disabled={availableClasses.length === 0}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Filter Kelas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Kelas</SelectItem>
+                    {availableClasses.map((classVal) => (
+                      <SelectItem key={classVal} value={classVal}>
+                        Kelas {classVal}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center pt-3 border-t border-gray-100">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="group-by-code"
+                  checked={groupByCode}
+                  onCheckedChange={onGroupByCodeChange}
+                />
+                <Label
+                  htmlFor="group-by-code"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Kelompokkan berdasarkan kode mata kuliah
+                </Label>
+              </div>
+            </div>
           </div>
 
           {/* Course List */}
-          <div className="space-y-2 max-h-[600px] overflow-y-auto">
-            {courses.map((course) => {
-              const isSelected = selectedCourses.find(
-                (c) => c.id === course.id
-              );
-              const isConflicted =
-                isSelected &&
-                conflicts.some(
-                  (conflict) =>
-                    conflict.course1.id === course.id ||
-                    conflict.course2.id === course.id
-                );
-
-              return (
-                <div
-                  key={course.id}
-                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                    isSelected
-                      ? isConflicted
-                        ? 'border-red-200 bg-red-50 hover:bg-red-100'
-                        : 'border-blue-200 bg-blue-50 hover:bg-blue-100'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                  onClick={() => onCourseToggle(course)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">{course.name}</div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        <span className="font-medium">
-                          {course.code}-{course.class}
-                        </span>{' '}
-                        • {course.credits} SKS • {course.lecturer}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {course.day}, {course.startTime}-{course.endTime} •{' '}
-                        {course.room}
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className={`mt-1 text-xs ${
-                          course.category === 'wajib'
-                            ? 'border-red-200 text-red-700'
-                            : course.category === 'pilihan'
-                              ? 'border-blue-200 text-blue-700'
-                              : 'border-green-200 text-green-700'
-                        }`}
-                      >
-                        {course.category.toUpperCase()}
-                      </Badge>
-
-                      {isConflicted && (
-                        <div className="text-xs text-red-600 mt-1">
-                          ⚠️ Bentrok waktu dengan mata kuliah lain
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="ml-2">
-                      {isSelected ? (
-                        <div
-                          className={`p-1 rounded ${isConflicted ? 'text-red-600' : 'text-blue-600'}`}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </div>
-                      ) : (
-                        <div className="p-1 rounded text-gray-400 hover:text-gray-600">
-                          <Plus className="h-4 w-4" />
-                        </div>
-                      )}
-                    </div>
+          <div className="space-y-2 max-h-[calc(100vh-420px)] overflow-y-auto pr-4">
+            {groupByCode && groupedCourses
+              ? // Grouped View
+                groupedCourses.map((group) => (
+                  <div key={group.code} className="p-2 border rounded-lg">
+                    <h4 className="font-semibold text-sm mb-2">
+                      {group.code} - {group.courses[0]?.name} (
+                      {group.totalClasses} kelas)
+                    </h4>
+                    {group.courses.map((course) => renderCourseItem(course))}
                   </div>
-                </div>
-              );
-            })}
+                ))
+              : // Default List View
+                courses.map((course) => renderCourseItem(course))}
           </div>
         </CardContent>
       </Card>
     </div>
   );
+
+  function renderCourseItem(course: Course) {
+    const isSelected = selectedCourses.some((c) => c.id === course.id);
+    const isConflicted =
+      isSelected &&
+      conflicts.some(
+        (conflict) =>
+          conflict.course1.id === course.id || conflict.course2.id === course.id
+      );
+
+    return (
+      <div
+        key={course.id}
+        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+          isSelected
+            ? isConflicted
+              ? 'border-red-200 bg-red-50 hover:bg-red-100'
+              : 'border-blue-200 bg-blue-50 hover:bg-blue-100'
+            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+        } ${groupByCode ? 'ml-4 my-2' : ''}`}
+        onClick={() => onCourseToggle(course)}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="font-medium text-sm">
+              {groupByCode ? `Kelas ${course.class}` : course.name}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              <span className="font-medium">{getFullCourseCode(course)}</span> •{' '}
+              {course.credits} SKS • {course.lecturer}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              {course.day}, {formatTimeRange(course.startTime, course.endTime)}{' '}
+              • {course.room}
+            </div>
+            <CategoryBadge
+              category={course.category}
+              className="text-xs mt-1"
+            />
+
+            {isConflicted && (
+              <div className="text-xs text-red-600 mt-1">
+                ⚠️ Bentrok waktu dengan mata kuliah lain
+              </div>
+            )}
+          </div>
+
+          <div className="ml-2">
+            {isSelected ? (
+              <div
+                className={`p-1 rounded ${isConflicted ? 'text-red-600' : 'text-blue-600'}`}
+              >
+                <Minus className="h-4 w-4" />
+              </div>
+            ) : (
+              <div className="p-1 rounded text-gray-400 hover:text-gray-600">
+                <Plus className="h-4 w-4" />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 }
