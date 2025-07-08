@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-
-interface APISettings {
-  googleAiApiKey: string;
-}
+import { APISettings } from '@/lib/types/settings';
 
 export const useSettings = () => {
   // API Settings State
