@@ -22,6 +22,7 @@ import {
   getFullCourseCode,
 } from '@/lib/course-utils';
 import React from 'react';
+import { CategoryBadge } from '@/components/ui/category-badge';
 
 interface TimeConflict {
   courses: [Course, Course];
@@ -309,12 +310,10 @@ export function CourseSelectionPanel({
               {course.day}, {formatTimeRange(course.startTime, course.endTime)}{' '}
               • {course.room}
             </div>
-            <Badge
-              variant={course.category === 'wajib' ? 'default' : 'secondary'}
+            <CategoryBadge
+              category={course.category}
               className="text-xs mt-1"
-            >
-              {course.category}
-            </Badge>
+            />
 
             {isConflicted && (
               <div className="text-xs text-red-600 mt-1">

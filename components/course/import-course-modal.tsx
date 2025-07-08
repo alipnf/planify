@@ -12,6 +12,7 @@ import { Upload, FileText, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { CreateCourseData } from '@/lib/types/course';
 import { formatTimeRange } from '@/lib/course-utils';
+import { CategoryBadge } from '@/components/ui/category-badge';
 
 interface ImportCoursesModalProps {
   open: boolean;
@@ -335,17 +336,7 @@ export function ImportCoursesModal({
                             <span className="text-sm text-gray-600">
                               • {course.credits} SKS
                             </span>
-                            <span
-                              className={`text-xs px-2 py-1 rounded ${
-                                course.category === 'wajib'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-blue-100 text-blue-800'
-                              }`}
-                            >
-                              {course.category === 'wajib'
-                                ? 'Wajib'
-                                : 'Pilihan'}
-                            </span>
+                            <CategoryBadge category={course.category} />
                           </div>
                           <div className="text-sm text-gray-700 mb-1">
                             {course.name}

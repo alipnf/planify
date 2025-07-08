@@ -16,7 +16,7 @@ import { detectTimeConflicts, daysOfWeek } from '@/lib/schedule-utils';
 import { formatTimeRange } from '@/lib/course-utils';
 import { WeeklySchedule } from './weekly-schedule';
 import { Textarea } from '../ui/textarea';
-import { Badge } from '../ui/badge';
+import { CategoryBadge } from '../ui/category-badge';
 
 interface SchedulePreferences {
   targetCredits: number;
@@ -285,17 +285,10 @@ export function AIScheduler({
                             <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
                               {course.credits} SKS
                             </span>
-                            <Badge
-                              variant={
-                                course.category === 'wajib'
-                                  ? 'default'
-                                  : 'secondary'
-                              }
-                            >
-                              {course.category === 'wajib'
-                                ? 'Wajib'
-                                : 'Pilihan'}
-                            </Badge>{' '}
+                            <CategoryBadge
+                              category={course.category}
+                              className="text-xs"
+                            />
                           </div>
                         </div>
                       ))}

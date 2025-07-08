@@ -2,6 +2,7 @@ import type { Course } from '@/lib/types/course';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatTimeRange } from '@/lib/course-utils';
+import { CategoryBadge } from '@/components/ui/category-badge';
 
 interface SelectedCourseListProps {
   selectedCourses: Course[];
@@ -36,18 +37,13 @@ export function SelectedCourseList({
                   {course.code} • {course.credits} SKS • {course.lecturer}
                 </div>
                 <div className="text-xs text-gray-600">
-                  {course.day},{' '}
-                  {formatTimeRange(course.startTime, course.endTime)} • Ruang{' '}
+                  {course.day}, {formatTimeRange(course.startTime, course.endTime)} • Ruang{' '}
                   {course.room}
                 </div>
-                <Badge
-                  variant={
-                    course.category === 'wajib' ? 'default' : 'secondary'
-                  }
+                <CategoryBadge
+                  category={course.category}
                   className="text-xs"
-                >
-                  {course.category === 'wajib' ? 'Wajib' : 'Pilihan'}
-                </Badge>
+                />
               </div>
             ))
           ) : (
