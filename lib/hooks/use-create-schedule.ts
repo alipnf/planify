@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useCourseManagement } from '@/lib/hooks/use-course-management';
+import { useCourses } from '@/lib/hooks/use-courses';
 import { useScheduleManagement } from '@/lib/hooks/use-schedule-management';
 import { Course } from '@/lib/types/course';
 import { saveSchedule } from '@/lib/services/schedules';
@@ -13,7 +13,7 @@ export const useCreateSchedule = () => {
   const [isSaving, setIsSaving] = useState(false);
   const { showSuccess, showError } = useMessage();
 
-  const { courses, isLoading } = useCourseManagement();
+  const { courses, isLoading } = useCourses();
 
   const {
     selectedCourses,
