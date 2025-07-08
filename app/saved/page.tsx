@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, X, Download } from 'lucide-react';
@@ -26,6 +26,7 @@ import type { SavedSchedule } from '@/lib/services/schedules';
 import type { Course } from '@/lib/types/course';
 
 export default function SavedSchedulesPage() {
+  const previewRef = useRef<HTMLDivElement>(null);
   // --- Hooks ---
   const {
     schedules,
@@ -36,13 +37,8 @@ export default function SavedSchedulesPage() {
     updateSharing,
   } = useSavedSchedules();
 
-  const {
-    selectedCourses,
-    conflicts,
-    timeSlots,
-    getCourseAtTime,
-    setSelectedCoursesDirectly,
-  } = useScheduleManagement();
+  const { selectedCourses, conflicts, setSelectedCoursesDirectly } =
+    useScheduleManagement();
 
   // --- UI State ---
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
@@ -59,6 +55,12 @@ export default function SavedSchedulesPage() {
   useEffect(() => {
     if (activeSchedule) {
       setSelectedCoursesDirectly(activeSchedule.schedule_data || []);
+      setTimeout(() => {
+        previewRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }, 100);
     } else {
       setSelectedCoursesDirectly([]);
     }
@@ -82,7 +84,6 @@ export default function SavedSchedulesPage() {
 
   const handlePreviewClick = (schedule: SavedSchedule) => {
     setActiveSchedule(schedule);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const closePreview = () => {
@@ -141,8 +142,27 @@ export default function SavedSchedulesPage() {
       </div>
 
       <main className="flex-1 space-y-4 pt-6">
+        {error ? (
+          <div className="text-red-500 flex items-center justify-center p-8 bg-red-50 rounded-lg">
+            <AlertCircle className="h-5 w-5 mr-2" />
+            <span>{error}</span>
+          </div>
+        ) : !isLoading && schedules.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <ScheduleGrid
+            schedules={schedules}
+            isLoading={isLoading}
+            activeScheduleId={activeSchedule?.id || null}
+            onDelete={handleDeleteClick}
+            onPreview={handlePreviewClick}
+            onExport={handleExport}
+            onShare={handleShareClick}
+          />
+        )}
+
         {activeSchedule && (
-          <div className="mb-8">
+          <div ref={previewRef} className="mt-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -163,8 +183,6 @@ export default function SavedSchedulesPage() {
                     <WeeklySchedule
                       courses={selectedCourses || []}
                       conflicts={conflicts}
-                      timeSlots={timeSlots}
-                      getCourseAtTime={getCourseAtTime}
                       showActions={false}
                     />
                   </div>
@@ -172,25 +190,6 @@ export default function SavedSchedulesPage() {
               </CardContent>
             </Card>
           </div>
-        )}
-
-        {error ? (
-          <div className="text-red-500 flex items-center justify-center p-8 bg-red-50 rounded-lg">
-            <AlertCircle className="h-5 w-5 mr-2" />
-            <span>{error}</span>
-          </div>
-        ) : !isLoading && schedules.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <ScheduleGrid
-            schedules={schedules}
-            isLoading={isLoading}
-            activeScheduleId={activeSchedule?.id || null}
-            onDelete={handleDeleteClick}
-            onPreview={handlePreviewClick}
-            onExport={handleExport}
-            onShare={handleShareClick}
-          />
         )}
       </main>
 
