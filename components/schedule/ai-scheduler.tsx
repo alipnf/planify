@@ -16,6 +16,7 @@ import { detectTimeConflicts, daysOfWeek } from '@/lib/schedule-utils';
 import { formatTimeRange } from '@/lib/course-utils';
 import { WeeklySchedule } from './weekly-schedule';
 import { Textarea } from '../ui/textarea';
+import { Badge } from '../ui/badge';
 
 interface SchedulePreferences {
   targetCredits: number;
@@ -284,19 +285,26 @@ export function AIScheduler({
                             <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
                               {course.credits} SKS
                             </span>
-                            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded">
-                              {course.category}
-                            </span>
+                            <Badge
+                              variant={
+                                course.category === 'wajib'
+                                  ? 'default'
+                                  : 'secondary'
+                              }
+                            >
+                              {course.category === 'wajib'
+                                ? 'Wajib'
+                                : 'Pilihan'}
+                            </Badge>{' '}
                           </div>
                         </div>
                       ))}
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex space-x-2">
+                    <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:space-x-2">
                       <Button
                         variant="outline"
-                        size="sm"
                         onClick={() => handlePreviewOption(option)}
                         className="flex-1"
                       >
@@ -305,20 +313,18 @@ export function AIScheduler({
                       </Button>
                       <Button
                         variant="outline"
-                        size="sm"
                         onClick={() => onEdit(option.courses)}
                         className="flex-1"
                       >
                         <Wand2 className="mr-2 h-4 w-4" />
-                        Edit di Manual
+                        Edit
                       </Button>
                       <Button
-                        size="sm"
                         onClick={() => onSave(option.courses)}
                         className="flex-1"
                       >
                         <Save className="mr-2 h-4 w-4" />
-                        Langsung Simpan
+                        Simpan
                       </Button>
                     </div>
                   </CardContent>

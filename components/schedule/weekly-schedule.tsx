@@ -47,12 +47,13 @@ export function WeeklySchedule({
             <span>Jadwal Mingguan</span>
           </CardTitle>
           {showActions && onResetSchedule && onSaveSchedule && (
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:space-x-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onResetSchedule}
                 disabled={courses.length === 0}
+                className="w-full sm:w-auto"
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Reset Jadwal
@@ -61,6 +62,7 @@ export function WeeklySchedule({
                 size="sm"
                 onClick={onSaveSchedule}
                 disabled={courses.length === 0}
+                className="w-full sm:w-auto"
               >
                 <Save className="h-4 w-4 mr-2" />
                 Simpan Jadwal
