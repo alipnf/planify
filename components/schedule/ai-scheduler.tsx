@@ -65,6 +65,7 @@ export function AIScheduler({
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
   const [previewCourses, setPreviewCourses] = useState<Course[]>([]);
   const [prompt, setPrompt] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Generate schedule options via Gemini API
   const generateScheduleOptions = async () => {
@@ -74,6 +75,7 @@ export function AIScheduler({
     setScheduleOptions([]);
     setSelectedOptionId(null);
     setPreviewCourses([]);
+    setErrorMessage(null);
 
     try {
       const response = await fetch('/api/generate-schedule', {
@@ -81,24 +83,30 @@ export function AIScheduler({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ courses, preferences, userPrompt: prompt }),
       });
-      const result = (await response.json()) as {
-        options: Course[][];
-        error?: string;
-      };
+
+      const result = await response.json();
+
       if (!response.ok) {
-        console.error('Error generating schedule options:', result.error);
+        setErrorMessage(
+          result.error || 'Terjadi kesalahan saat membuat jadwal.'
+        );
+        console.error('Error generating schedule options:', result.details);
         return;
       }
-      const schedules = result.options;
+      const schedules = result.options as Course[][];
       const mappedOptions: ScheduleOptionView[] = schedules.map(
-        (courseArr, index) => ({
+        (courseArr: Course[], index: number) => ({
           id: index + 1,
           courses: courseArr,
-          totalCredits: courseArr.reduce((sum, c) => sum + c.credits, 0),
+          totalCredits: courseArr.reduce(
+            (sum: number, c: Course) => sum + c.credits,
+            0
+          ),
         })
       );
       setScheduleOptions(mappedOptions);
     } catch (error) {
+      setErrorMessage('Gagal terhubung ke server. Silakan coba lagi.');
       console.error('Error generating schedule options:', error);
     } finally {
       setIsGenerating(false);
@@ -177,6 +185,13 @@ export function AIScheduler({
               </>
             )}
           </Button>
+
+          {errorMessage && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
 
           {/* Info Alert */}
           <Alert>

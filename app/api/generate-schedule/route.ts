@@ -14,9 +14,13 @@ export async function POST(req: NextRequest) {
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  const prompt = `Berdasarkan deskripsi pengguna: "${userPrompt}", buat 3 sampai 5 opsi jadwal kuliah yang bebas bentrok waktu antar mata kuliah. Setiap opsi harus berupa JSON array of arrays yang berisi objek mata kuliah lengkap dengan semua propertinya: id, code, name, class, day, startTime, endTime, credits, category, lecturer, dan room. Berikut data mata kuliah yang tersedia: ${JSON.stringify(
+  const prompt = `Tugas Anda adalah asisten pembuat jadwal kuliah. Pertama, evaluasi permintaan pengguna: "${userPrompt}".
+Jika permintaan ini tidak relevan untuk membuat jadwal kuliah (misalnya, hanya sapaan, pertanyaan acak, atau tidak masuk akal), response Anda HARUS berupa satu objek JSON: {"status": "irrelevant_prompt", "reason": "Penjelasan singkat mengapa prompt tidak relevan"}.
+Jika permintaan relevan, buat 3 sampai 5 opsi jadwal kuliah yang bebas bentrok. Setiap opsi harus berupa JSON array of arrays, di mana setiap array berisi objek mata kuliah lengkap (id, code, name, class, day, startTime, endTime, credits, category, lecturer, room).
+Gunakan data mata kuliah ini: ${JSON.stringify(
     courses
-  )}. Sesuaikan jadwal dengan preferensi: ${JSON.stringify(preferences)}. Response harus hanya JSON tanpa teks penjelasan (contoh: [[{id:"...",code:"...",...}, {...}], [...], [...]]).`;
+  )}. Pertimbangkan preferensi ini: ${JSON.stringify(preferences)}.
+Response Anda HARUS HANYA JSON, tanpa teks atau markup lain.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -31,10 +35,10 @@ export async function POST(req: NextRequest) {
         .replace(/^```(?:json)?\s*/i, '')
         .replace(/\s*```$/i, '');
     }
-    // Parse model output as JSON schedules
-    let schedules: Course[][];
+    // Parse model output as JSON
+    let modelResponse: Course[][] | { status: string; reason: string };
     try {
-      schedules = JSON.parse(sanitized) as Course[][];
+      modelResponse = JSON.parse(sanitized);
     } catch (e) {
       return NextResponse.json(
         {
@@ -44,8 +48,22 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Check if AI determined the prompt was irrelevant
+    if (
+      typeof modelResponse === 'object' &&
+      !Array.isArray(modelResponse) &&
+      'status' in modelResponse &&
+      modelResponse.status === 'irrelevant_prompt'
+    ) {
+      return NextResponse.json(
+        { error: 'Prompt tidak relevan.', details: modelResponse.reason },
+        { status: 400 }
+      );
+    }
+
     // Return full schedule options
-    return NextResponse.json({ options: schedules });
+    return NextResponse.json({ options: modelResponse as Course[][] });
   } catch (e) {
     return NextResponse.json(
       { error: 'Internal server error', details: e },
