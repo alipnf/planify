@@ -9,6 +9,8 @@ export function useScheduleManagement() {
   const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSemester, setFilterSemester] = useState('all');
+  const [filterClass, setFilterClass] = useState('all');
+  const [groupByCode, setGroupByCode] = useState(false);
 
   // Memoized computations
   const conflicts = useMemo(
@@ -20,7 +22,7 @@ export function useScheduleManagement() {
     [selectedCourses]
   );
 
-  // Filter courses based on search and semester
+  // Filter courses based on search, semester, and class
   const filterCourses = useCallback(
     (courses: Course[]) => {
       return courses.filter((course) => {
@@ -33,10 +35,13 @@ export function useScheduleManagement() {
         const matchesSemester =
           filterSemester === 'all' || course.semester === filterSemester;
 
-        return matchesSearch && matchesSemester;
+        const matchesClass =
+          filterClass === 'all' || course.class === filterClass;
+
+        return matchesSearch && matchesSemester && matchesClass;
       });
     },
-    [searchQuery, filterSemester]
+    [searchQuery, filterSemester, filterClass]
   );
 
   // Toggle course selection
@@ -66,6 +71,8 @@ export function useScheduleManagement() {
     selectedCourses,
     searchQuery,
     filterSemester,
+    filterClass,
+    groupByCode,
 
     // Computed values
     conflicts,
@@ -80,5 +87,7 @@ export function useScheduleManagement() {
     // Setters
     setSearchQuery,
     setFilterSemester,
+    setFilterClass,
+    setGroupByCode,
   };
 }
