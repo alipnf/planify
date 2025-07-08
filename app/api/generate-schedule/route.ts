@@ -4,12 +4,21 @@ import { GoogleGenAI } from '@google/genai';
 import type { Course } from '@/lib/types/course';
 
 export async function POST(req: NextRequest) {
-  const { courses, preferences, userPrompt } = await req.json();
-  const apiKey = process.env.GEMINI_API_KEY;
+  const {
+    courses,
+    preferences,
+    userPrompt,
+    apiKey: userApiKey,
+  } = await req.json();
+
+  const apiKey = userApiKey || process.env.GEMINI_API_KEY;
+
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'Missing GEMINI_API_KEY' },
-      { status: 500 }
+      {
+        error: 'API key tidak dikonfigurasi. Harap atur di halaman Pengaturan.',
+      },
+      { status: 400 }
     );
   }
 
