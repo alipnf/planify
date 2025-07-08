@@ -9,7 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface CourseFiltersProps {
   searchQuery: string;
@@ -124,19 +125,17 @@ export function CourseFilters({
           {/* View Options Row */}
           <div className="flex items-center pt-2 border-t border-gray-100">
             <div className="flex items-center space-x-2">
-              <Checkbox
+              <Switch
                 id="group-by-code"
                 checked={groupByCode}
-                onCheckedChange={(checked) =>
-                  onGroupByCodeChange(checked as boolean)
-                }
+                onCheckedChange={onGroupByCodeChange}
               />
-              <label
+              <Label
                 htmlFor="group-by-code"
                 className="text-sm font-medium text-gray-700"
               >
                 Kelompokkan berdasarkan kode mata kuliah
-              </label>
+              </Label>
             </div>
           </div>
         </div>
