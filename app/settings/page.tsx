@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import {
   Settings,
   Key,
@@ -17,74 +16,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { toast } from 'sonner';
-
-interface APISettings {
-  googleAiApiKey: string;
-}
+import { useSettings } from '@/lib/hooks/use-settings';
 
 export default function SettingsPage() {
-  // API Settings State
-  const [apiSettings, setApiSettings] = useState<APISettings>({
-    googleAiApiKey: '',
-  });
-  const [savedApiKey, setSavedApiKey] = useState<string>('');
-
-  // UI States
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Load settings from localStorage on component mount
-  useEffect(() => {
-    const storedApiKey = localStorage.getItem('googleAiApiKey');
-    if (storedApiKey) {
-      setApiSettings({ googleAiApiKey: storedApiKey });
-      setSavedApiKey(storedApiKey);
-    }
-  }, []);
-
-  // --- HANDLERS ---
-
-  // Validate and Save API Settings
-  const handleSaveApiSettings = async () => {
-    if (!apiSettings.googleAiApiKey.trim()) {
-      toast.error('Masukkan API key terlebih dahulu.');
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const response = await fetch('/api/test-api', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ apiKey: apiSettings.googleAiApiKey }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        localStorage.setItem('googleAiApiKey', apiSettings.googleAiApiKey);
-        setSavedApiKey(apiSettings.googleAiApiKey);
-        toast.success('API key valid dan berhasil disimpan!');
-      } else {
-        toast.error(result.message || 'API key tidak valid. Gagal menyimpan.');
-      }
-    } catch (error) {
-      console.error('Error saving API key:', error);
-      toast.error('Terjadi kesalahan saat validasi. Gagal menyimpan.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDeleteApiKey = () => {
-    localStorage.removeItem('googleAiApiKey');
-    setApiSettings({ googleAiApiKey: '' });
-    setSavedApiKey('');
-    toast.info('API key telah dihapus.');
-  };
+  const {
+    apiSettings,
+    savedApiKey,
+    showApiKey,
+    isSaving,
+    setShowApiKey,
+    handleSaveApiSettings,
+    handleDeleteApiKey,
+    handleApiKeyChange,
+  } = useSettings();
 
   return (
     <div className="min-h-screen bg-background">
@@ -166,12 +110,7 @@ export default function SettingsPage() {
                     id="apiKey"
                     type={showApiKey ? 'text' : 'password'}
                     value={apiSettings.googleAiApiKey}
-                    onChange={(e) =>
-                      setApiSettings((prev) => ({
-                        ...prev,
-                        googleAiApiKey: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => handleApiKeyChange(e.target.value)}
                     placeholder="Masukkan Google AI API Key Anda..."
                     className="pr-10"
                   />
