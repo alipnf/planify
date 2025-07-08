@@ -78,10 +78,18 @@ export function AIScheduler({
     setErrorMessage(null);
 
     try {
+      // Get the API key from local storage. It's okay if it's null.
+      const apiKey = localStorage.getItem('googleAiApiKey');
+
       const response = await fetch('/api/generate-schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courses, preferences, userPrompt: prompt }),
+        body: JSON.stringify({
+          courses,
+          preferences,
+          userPrompt: prompt,
+          apiKey,
+        }),
       });
 
       const result = await response.json();

@@ -96,7 +96,9 @@ export function ImportCoursesModal({
   };
 
   const isValidCategory = (value: unknown): value is 'wajib' | 'pilihan' => {
-    return value === 'wajib' || value === 'pilihan';
+    if (typeof value !== 'string') return false;
+    const lowercasedValue = value.trim().toLowerCase();
+    return lowercasedValue === 'wajib' || lowercasedValue === 'pilihan';
   };
 
   const validateImportData = (
@@ -189,7 +191,9 @@ export function ImportCoursesModal({
           startTime: course.startTime as string,
           endTime: course.endTime as string,
           semester: course.semester as string,
-          category: course.category as 'wajib' | 'pilihan',
+          category: (course.category as string).trim().toLowerCase() as
+            | 'wajib'
+            | 'pilihan',
           class: course.class as string,
         };
         validatedCourses.push(validatedCourse);
