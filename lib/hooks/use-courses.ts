@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
-import { Course, CreateCourseData, UpdateCourseData } from '@/lib/types/course';
+import {
+  Course,
+  CreateCourseData,
+  UpdateCourseData,
+  CoursesState,
+  CoursesActions,
+} from '@/lib/types/course';
 import * as coursesService from '@/lib/services/courses';
 import {
   filterCourses,
@@ -12,73 +18,7 @@ import {
   getFullCourseCode,
 } from '@/lib/course-utils';
 
-export interface CourseManagementState {
-  // Data
-  courses: Course[];
-  filteredCourses: Course[];
-  groupedCourses: Array<{
-    code: string;
-    courses: Course[];
-    totalClasses: number;
-  }> | null;
-  availableClasses: string[];
-  selectedCourseNames: string[];
-
-  // UI State
-  searchQuery: string;
-  selectedCourses: string[];
-  selectedSemester: string;
-  selectedClass: string;
-  groupByCode: boolean;
-  isLoading: boolean;
-
-  // Modal States
-  showCourseModal: boolean;
-  showImportModal: boolean;
-  showDeleteDialog: boolean;
-  showBulkDeleteDialog: boolean;
-  editingCourse: Course | null;
-  courseToDelete: Course | null;
-
-  // Computed values
-  allSelected: boolean;
-  someSelected: boolean;
-}
-
-export interface CourseManagementActions {
-  // Data Actions
-  loadCourses: () => Promise<void>;
-  handleSaveCourse: (courseData: Partial<Course>) => Promise<void>;
-  handleImportCourses: (importedCourses: CreateCourseData[]) => Promise<void>;
-  handleExportAll: () => void;
-
-  // UI Actions
-  setSearchQuery: (query: string) => void;
-  setSelectedSemester: (semester: string) => void;
-  setSelectedClass: (classValue: string) => void;
-  setGroupByCode: (group: boolean) => void;
-
-  // Selection Actions
-  handleSelectAll: (checked: boolean) => void;
-  handleSelectCourse: (courseId: string, checked: boolean) => void;
-
-  // CRUD Actions
-  handleAddCourse: () => void;
-  handleEditCourse: (course: Course) => void;
-  handleDeleteCourseClick: (course: Course) => void;
-  handleBulkDeleteClick: () => void;
-  handleConfirmDelete: () => Promise<void>;
-  handleConfirmBulkDelete: () => Promise<void>;
-
-  // Modal Actions
-  setShowCourseModal: (show: boolean) => void;
-  setShowImportModal: (show: boolean) => void;
-  setShowDeleteDialog: (show: boolean) => void;
-  setShowBulkDeleteDialog: (show: boolean) => void;
-}
-
-export function useCourseManagement(): CourseManagementState &
-  CourseManagementActions {
+export function useCourses(): CoursesState & CoursesActions {
   // State variables
   const [courses, setCourses] = useState<Course[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -147,6 +87,14 @@ export function useCourseManagement(): CourseManagementState &
       selectedCourses.length < filteredCourses.length
     );
   }, [selectedCourses.length, filteredCourses.length]);
+
+  const hasFilters = useMemo(() => {
+    return (
+      searchQuery !== '' ||
+      selectedSemester !== 'all' ||
+      selectedClass !== 'all'
+    );
+  }, [searchQuery, selectedSemester, selectedClass]);
 
   // Data Actions
   const loadCourses = useCallback(async () => {
@@ -337,6 +285,7 @@ export function useCourseManagement(): CourseManagementState &
     courseToDelete,
     allSelected,
     someSelected,
+    hasFilters,
 
     // Actions
     loadCourses,

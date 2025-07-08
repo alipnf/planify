@@ -7,16 +7,49 @@ import { CourseTable } from '@/components/course/course-table';
 import { CourseEmptyState } from '@/components/course/course-empty-state';
 import { CourseDeleteDialogs } from '@/components/course/course-delete-dialogs';
 import { CourseTableSkeleton } from '@/components/course/course-table-skeleton';
-import { useCourseManagement } from '@/lib/hooks/use-course-management';
+import { useCourses } from '@/lib/hooks/use-courses';
 
 export default function CoursesPage() {
-  const courseManagement = useCourseManagement();
-
-  // Check if filters are applied
-  const hasFilters =
-    courseManagement.searchQuery !== '' ||
-    courseManagement.selectedSemester !== 'all' ||
-    courseManagement.selectedClass !== 'all';
+  const {
+    searchQuery,
+    selectedSemester,
+    selectedClass,
+    groupByCode,
+    availableClasses,
+    setSearchQuery,
+    setSelectedSemester,
+    setSelectedClass,
+    setGroupByCode,
+    handleExportAll,
+    setShowImportModal,
+    handleAddCourse,
+    isLoading,
+    filteredCourses,
+    hasFilters,
+    selectedCourses,
+    handleSelectAll,
+    handleSelectCourse,
+    handleEditCourse,
+    handleDeleteCourseClick,
+    handleBulkDeleteClick,
+    allSelected,
+    someSelected,
+    groupedCourses,
+    showCourseModal,
+    setShowCourseModal,
+    editingCourse,
+    handleSaveCourse,
+    showImportModal,
+    handleImportCourses,
+    showDeleteDialog,
+    courseToDelete,
+    setShowDeleteDialog,
+    handleConfirmDelete,
+    showBulkDeleteDialog,
+    selectedCourseNames,
+    setShowBulkDeleteDialog,
+    handleConfirmBulkDelete,
+  } = useCourses();
 
   return (
     <>
@@ -34,42 +67,42 @@ export default function CoursesPage() {
 
           {/* Filters */}
           <CourseFilters
-            searchQuery={courseManagement.searchQuery}
-            selectedSemester={courseManagement.selectedSemester}
-            selectedClass={courseManagement.selectedClass}
-            groupByCode={courseManagement.groupByCode}
-            availableClasses={courseManagement.availableClasses}
-            onSearchChange={courseManagement.setSearchQuery}
-            onSemesterChange={courseManagement.setSelectedSemester}
-            onClassChange={courseManagement.setSelectedClass}
-            onGroupByCodeChange={courseManagement.setGroupByCode}
-            onExport={courseManagement.handleExportAll}
-            onImport={() => courseManagement.setShowImportModal(true)}
-            onAddCourse={courseManagement.handleAddCourse}
+            searchQuery={searchQuery}
+            selectedSemester={selectedSemester}
+            selectedClass={selectedClass}
+            groupByCode={groupByCode}
+            availableClasses={availableClasses}
+            onSearchChange={setSearchQuery}
+            onSemesterChange={setSelectedSemester}
+            onClassChange={setSelectedClass}
+            onGroupByCodeChange={setGroupByCode}
+            onExport={handleExportAll}
+            onImport={() => setShowImportModal(true)}
+            onAddCourse={handleAddCourse}
           />
 
           {/* Course Table, Loading State, or Empty State */}
-          {courseManagement.isLoading ? (
+          {isLoading ? (
             <CourseTableSkeleton rows={8} />
-          ) : courseManagement.filteredCourses.length === 0 ? (
+          ) : filteredCourses.length === 0 ? (
             <CourseEmptyState
               hasFilters={hasFilters}
-              onAddCourse={courseManagement.handleAddCourse}
-              onImport={() => courseManagement.setShowImportModal(true)}
+              onAddCourse={handleAddCourse}
+              onImport={() => setShowImportModal(true)}
             />
           ) : (
             <CourseTable
-              courses={courseManagement.filteredCourses}
-              selectedCourses={courseManagement.selectedCourses}
-              onSelectAll={courseManagement.handleSelectAll}
-              onSelectCourse={courseManagement.handleSelectCourse}
-              onEditCourse={courseManagement.handleEditCourse}
-              onDeleteCourse={courseManagement.handleDeleteCourseClick}
-              onBulkDelete={courseManagement.handleBulkDeleteClick}
-              allSelected={courseManagement.allSelected}
-              someSelected={courseManagement.someSelected}
-              groupByCode={courseManagement.groupByCode}
-              groupedCourses={courseManagement.groupedCourses}
+              courses={filteredCourses}
+              selectedCourses={selectedCourses}
+              onSelectAll={handleSelectAll}
+              onSelectCourse={handleSelectCourse}
+              onEditCourse={handleEditCourse}
+              onDeleteCourse={handleDeleteCourseClick}
+              onBulkDelete={handleBulkDeleteClick}
+              allSelected={allSelected}
+              someSelected={someSelected}
+              groupByCode={groupByCode}
+              groupedCourses={groupedCourses}
             />
           )}
         </div>
@@ -77,29 +110,29 @@ export default function CoursesPage() {
 
       {/* Modals */}
       <CourseModal
-        open={courseManagement.showCourseModal}
-        onOpenChange={courseManagement.setShowCourseModal}
-        course={courseManagement.editingCourse}
-        onSave={courseManagement.handleSaveCourse}
+        open={showCourseModal}
+        onOpenChange={setShowCourseModal}
+        course={editingCourse}
+        onSave={handleSaveCourse}
       />
 
       <ImportCoursesModal
-        open={courseManagement.showImportModal}
-        onOpenChange={courseManagement.setShowImportModal}
-        onImport={courseManagement.handleImportCourses}
+        open={showImportModal}
+        onOpenChange={setShowImportModal}
+        onImport={handleImportCourses}
       />
 
       {/* Delete Dialogs */}
       <CourseDeleteDialogs
-        showDeleteDialog={courseManagement.showDeleteDialog}
-        courseToDelete={courseManagement.courseToDelete}
-        onDeleteDialogChange={courseManagement.setShowDeleteDialog}
-        onConfirmDelete={courseManagement.handleConfirmDelete}
-        showBulkDeleteDialog={courseManagement.showBulkDeleteDialog}
-        selectedCourseNames={courseManagement.selectedCourseNames}
-        selectedCount={courseManagement.selectedCourses.length}
-        onBulkDeleteDialogChange={courseManagement.setShowBulkDeleteDialog}
-        onConfirmBulkDelete={courseManagement.handleConfirmBulkDelete}
+        showDeleteDialog={showDeleteDialog}
+        courseToDelete={courseToDelete}
+        onDeleteDialogChange={setShowDeleteDialog}
+        onConfirmDelete={handleConfirmDelete}
+        showBulkDeleteDialog={showBulkDeleteDialog}
+        selectedCourseNames={selectedCourseNames}
+        selectedCount={selectedCourses.length}
+        onBulkDeleteDialogChange={setShowBulkDeleteDialog}
+        onConfirmBulkDelete={handleConfirmBulkDelete}
       />
     </>
   );
