@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   getSavedSchedules,
   deleteSavedSchedule,
@@ -9,8 +9,8 @@ import {
   type SavedSchedule,
 } from '@/lib/services/schedules';
 import { useMessage } from './use-message';
-import { useScheduleManagement } from './use-schedule-management';
 import type { Course } from '@/lib/types/course';
+import { detectTimeConflicts } from '@/lib/schedule-utils';
 
 export function useSavedSchedules() {
   // --- Core State ---
@@ -34,8 +34,16 @@ export function useSavedSchedules() {
 
   // --- Hooks ---
   const { showSuccess, showError } = useMessage();
-  const { selectedCourses, conflicts, setSelectedCoursesDirectly } =
-    useScheduleManagement();
+
+  // --- Derived state for preview ---
+  const selectedCourses = useMemo(
+    () => activeSchedule?.schedule_data || [],
+    [activeSchedule]
+  );
+  const conflicts = useMemo(
+    () => detectTimeConflicts(selectedCourses),
+    [selectedCourses]
+  );
 
   // --- Data Fetching ---
   const fetchSchedules = useCallback(async () => {
@@ -58,17 +66,14 @@ export function useSavedSchedules() {
   // --- Effects ---
   useEffect(() => {
     if (activeSchedule) {
-      setSelectedCoursesDirectly(activeSchedule.schedule_data || []);
       setTimeout(() => {
         previewRef.current?.scrollIntoView({
           behavior: 'smooth',
           block: 'start',
         });
       }, 100);
-    } else {
-      setSelectedCoursesDirectly([]);
     }
-  }, [activeSchedule, setSelectedCoursesDirectly]);
+  }, [activeSchedule]);
 
   // --- Core Logic Handlers (internal) ---
   const internalDeleteSchedule = async (scheduleId: string) => {

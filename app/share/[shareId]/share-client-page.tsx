@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { SavedSchedule } from '@/lib/services/schedules';
-import { useScheduleManagement } from '@/lib/hooks/use-schedule-management';
 import { WeeklySchedule } from '@/components/schedule/weekly-schedule';
 import {
   Card,
@@ -16,15 +15,13 @@ import { Save } from 'lucide-react';
 import { SaveScheduleDialog } from '@/components/schedule/save-schedule-dialog';
 import { SelectedCourseList } from '@/components/saved/selected-course-list';
 import { useSharePage } from '@/lib/hooks/use-share-page';
+import { detectTimeConflicts } from '@/lib/schedule-utils';
 
 interface ShareClientPageProps {
   schedule: SavedSchedule;
 }
 
 export function ShareClientPage({ schedule }: ShareClientPageProps) {
-  const { selectedCourses, conflicts, setSelectedCoursesDirectly } =
-    useScheduleManagement();
-
   const {
     loading,
     showSaveDialog,
@@ -34,15 +31,18 @@ export function ShareClientPage({ schedule }: ShareClientPageProps) {
     handleConfirmSave,
   } = useSharePage(schedule);
 
-  useEffect(() => {
-    if (schedule && schedule.schedule_data) {
-      setSelectedCoursesDirectly(schedule.schedule_data);
-    }
-  }, [schedule, setSelectedCoursesDirectly]);
+  // Derived state from props
+  const selectedCourses = useMemo(
+    () => schedule?.schedule_data || [],
+    [schedule]
+  );
+  const conflicts = useMemo(
+    () => detectTimeConflicts(selectedCourses),
+    [selectedCourses]
+  );
 
   const totalCredits =
-    schedule.schedule_data?.reduce((sum, course) => sum + course.credits, 0) ??
-    0;
+    selectedCourses.reduce((sum, course) => sum + course.credits, 0) ?? 0;
 
   return (
     <>
@@ -51,8 +51,8 @@ export function ShareClientPage({ schedule }: ShareClientPageProps) {
           <div>
             <CardTitle className="text-2xl">{schedule.schedule_name}</CardTitle>
             <CardDescription>
-              Total {schedule.schedule_data?.length || 0} mata kuliah (
-              {totalCredits} SKS)
+              Total {selectedCourses.length || 0} mata kuliah ({totalCredits}{' '}
+              SKS)
             </CardDescription>
           </div>
           <div className="mt-4 sm:mt-0">
