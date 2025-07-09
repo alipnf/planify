@@ -23,40 +23,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { User } from '@supabase/supabase-js';
+import { useUser } from '@/lib/hooks/use-auth';
+import { useAuthStore } from '@/lib/stores/auth';
 
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, loading } = useUser();
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-    });
-    // Optional: subscribe to auth changes
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-      }
-    );
-    return () => {
-      listener?.subscription.unsubscribe();
-    };
-  }, []);
+  const setMessage = useAuthStore((state) => state.setMessage);
 
   const handleLogout = async () => {
-    router.push('/auth/login');
     const supabase = createClient();
     await supabase.auth.signOut();
-    setUser(null);
+    setMessage(null);
+    router.push('/auth/login');
+    router.refresh();
   };
 
-  const isAuthenticated = !!user;
+  const isAuthenticated = !loading && !!user;
+  const shouldShowNavigation = isAuthenticated || loading;
 
   const navigation = [
     { name: 'Semua Mata Kuliah', href: '/courses', icon: BookOpen },
@@ -69,13 +57,11 @@ export function Navbar() {
       <header className="bg-background/80 backdrop-blur border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo */}
             <Link href="/" className="flex items-center space-x-2">
               <span className="text-xl font-bold text-primary">Planify</span>
             </Link>
 
-            {/* Desktop Navigation */}
-            {isAuthenticated && (
+            {shouldShowNavigation && (
               <nav className="hidden md:flex space-x-1">
                 {navigation.map((item) => {
                   const Icon = item.icon;
@@ -99,71 +85,118 @@ export function Navbar() {
               </nav>
             )}
 
-            {/* Right side */}
+            {/* Right side Actions */}
             <div className="flex items-center space-x-4">
-              {isAuthenticated ? (
-                <>
-                  {/* Desktop User Dropdown */}
-                  <div className="hidden md:block">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="flex items-center space-x-2"
-                        >
-                          <Avatar className="h-8 w-8">
-                            {user?.user_metadata?.avatar_url ? (
-                              <AvatarImage
-                                src={user.user_metadata.avatar_url}
-                                alt={user.user_metadata.full_name || user.email}
-                                referrerPolicy="no-referrer"
-                              />
-                            ) : (
-                              <AvatarFallback>
-                                {user?.user_metadata?.full_name
-                                  ?.charAt(0)
-                                  .toUpperCase() ||
-                                  user?.email?.charAt(0).toUpperCase() ||
-                                  'U'}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                          <div className="hidden sm:block text-left">
-                            <div className="text-sm font-medium">
-                              {user?.user_metadata?.full_name || user?.email}
+              {/* Desktop Auth Status */}
+              <div className="hidden md:block">
+                {isAuthenticated || loading ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="flex items-center space-x-2"
+                      >
+                        <Avatar className="h-8 w-8">
+                          {loading ? (
+                            <div className="h-full w-full rounded-full bg-gray-200 animate-pulse" />
+                          ) : user?.user_metadata?.avatar_url ? (
+                            <AvatarImage
+                              src={user.user_metadata.avatar_url}
+                              alt={user.user_metadata.full_name || user.email}
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <AvatarFallback>
+                              {user?.user_metadata?.full_name
+                                ?.charAt(0)
+                                .toUpperCase() ||
+                                user?.email?.charAt(0).toUpperCase() ||
+                                'U'}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      {loading ? (
+                        <>
+                          <DropdownMenuItem disabled>
+                            <div className="flex flex-col space-y-2">
+                              <div className="h-4 w-32 bg-gray-200 animate-pulse rounded" />
+                              <div className="h-3 w-40 bg-gray-200 animate-pulse rounded" />
                             </div>
-                          </div>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56">
-                        <DropdownMenuItem
-                          onClick={() => router.push('/settings')}
-                        >
-                          <Settings className="h-4 w-4 mr-2" />
-                          Pengaturan
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => setShowLogoutAlert(true)}
-                          className="text-destructive"
-                        >
-                          <LogOut className="h-4 w-4 mr-2" />
-                          Keluar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem disabled>
+                            <div className="h-4 w-24 bg-gray-200 animate-pulse rounded" />
+                          </DropdownMenuItem>
+                        </>
+                      ) : (
+                        <>
+                          <DropdownMenuItem disabled>
+                            <div className="flex flex-col space-y-1">
+                              <p className="text-sm font-medium leading-none">
+                                {user?.user_metadata?.full_name || user?.email}
+                              </p>
+                              <p className="text-xs leading-none text-muted-foreground">
+                                {user?.email}
+                              </p>
+                            </div>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => router.push('/settings')}
+                          >
+                            <Settings className="h-4 w-4 mr-2" />
+                            Pengaturan
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => setShowLogoutAlert(true)}
+                            className="text-destructive"
+                          >
+                            <LogOut className="h-4 w-4 mr-2" />
+                            Keluar
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <>
+                    <Link href="/auth/login">
+                      <Button variant="ghost" className="text-sm">
+                        Masuk
+                      </Button>
+                    </Link>
+                    <Link href="/auth/register">
+                      <Button size="sm" className="text-sm">
+                        Daftar
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </div>
 
-                  {/* Mobile Menu */}
-                  <div className="md:hidden">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <Menu className="h-5 w-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56">
-                        <DropdownMenuItem>
+              {/* Mobile Menu */}
+              <div className="md:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    {loading ? (
+                      <DropdownMenuItem disabled>
+                        <div className="flex items-center space-x-2 w-full">
+                          <div className="h-6 w-6 rounded-full bg-gray-200 animate-pulse" />
+                          <div className="h-4 w-24 bg-gray-200 animate-pulse" />
+                        </div>
+                      </DropdownMenuItem>
+                    ) : isAuthenticated ? (
+                      <>
+                        <DropdownMenuItem disabled>
                           <div className="flex items-center space-x-2 w-full">
                             <Avatar className="h-6 w-6">
                               <AvatarImage
@@ -225,68 +258,34 @@ export function Navbar() {
                           <LogOut className="h-4 w-4 mr-2" />
                           Keluar
                         </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Desktop Auth Buttons */}
-                  <div className="hidden md:flex space-x-2">
-                    <Link href="/auth/login">
-                      <Button variant="ghost" className="text-sm">
-                        Masuk
-                      </Button>
-                    </Link>
-                    <Link href="/auth/register">
-                      <Button size="sm" className="text-sm">
-                        Daftar
-                      </Button>
-                    </Link>
-                  </div>
-
-                  {/* Mobile Auth Menu */}
-                  <div className="md:hidden">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <Menu className="h-5 w-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <div className="flex gap-2 w-full px-3 py-2">
-                          <Link href="/auth/register" className="w-1/2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full"
-                            >
-                              Daftar
-                            </Button>
+                      </>
+                    ) : (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link href="/auth/login" className="w-full">
+                            Masuk
                           </Link>
-                          <Link href="/auth/login" className="w-1/2">
-                            <Button size="sm" className="w-full">
-                              Masuk
-                            </Button>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/auth/register" className="w-full">
+                            Daftar
                           </Link>
-                        </div>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </>
-              )}
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
         </div>
       </header>
-
       <AlertDialog open={showLogoutAlert} onOpenChange={setShowLogoutAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Apakah Anda yakin ingin keluar?</AlertDialogTitle>
+            <AlertDialogTitle>Konfirmasi Keluar</AlertDialogTitle>
             <AlertDialogDescription>
-              Sesi Anda akan berakhir dan Anda perlu masuk kembali untuk
-              mengakses jadwal dan data lainnya.
+              Anda yakin ingin keluar dari akun Anda?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

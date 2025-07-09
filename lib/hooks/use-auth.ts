@@ -65,6 +65,9 @@ export function useAuth<T extends FieldValues>({
         if (redirectConfig) {
           router.push(redirectConfig.path);
         }
+        setTimeout(() => {
+          setMessage(null);
+        }, 3000);
       }
     } catch (err) {
       setMessage({
