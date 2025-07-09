@@ -1,13 +1,12 @@
+'use client';
+
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Message } from '@/lib/hooks/use-message';
+import { useAuthStore } from '@/lib/stores/auth';
 
-interface MessageDisplayProps {
-  message: Message | null;
-  className?: string;
-}
+export function MessageDisplay({ className }: { className?: string }) {
+  const message = useAuthStore((state) => state.message);
 
-export function MessageDisplay({ message, className }: MessageDisplayProps) {
   if (!message) return null;
 
   const isError = message.type === 'error';
@@ -30,4 +29,4 @@ export function MessageDisplay({ message, className }: MessageDisplayProps) {
       <span className="text-sm">{message.text}</span>
     </div>
   );
-} 
+}

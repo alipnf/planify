@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 
 export function usePasswordToggle() {
@@ -11,4 +13,3 @@ export function usePasswordToggle() {
     type: isVisible ? 'text' : 'password',
   };
 }
-

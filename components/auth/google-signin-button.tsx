@@ -1,26 +1,28 @@
+'use client';
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
+import { useAuthStore } from '@/lib/stores/auth';
 
 interface GoogleSignInButtonProps {
   text: string;
   loadingText: string;
-  disabled?: boolean;
-  onError: (message: string) => void;
   className?: string;
 }
 
 export function GoogleSignInButton({
   text,
   loadingText,
-  disabled = false,
-  onError,
   className = 'w-full mb-4',
 }: GoogleSignInButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const isSubmitting = useAuthStore((state) => state.isSubmitting);
+  const setMessage = useAuthStore((state) => state.setMessage);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
+    setMessage(null);
     const supabase = createClient();
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -32,7 +34,10 @@ export function GoogleSignInButton({
       if (error) throw error;
       if (data.url) window.location.href = data.url;
     } catch (error) {
-      onError('Gagal dengan Google. Silakan coba lagi.');
+      setMessage({
+        type: 'error',
+        text: 'Gagal dengan Google. Silakan coba lagi.',
+      });
       console.error('Error signing in:', error);
     } finally {
       setIsLoading(false);
@@ -44,7 +49,7 @@ export function GoogleSignInButton({
       onClick={handleGoogleSignIn}
       variant="outline"
       className={className}
-      disabled={disabled || isLoading}
+      disabled={isSubmitting || isLoading}
     >
       {isLoading ? (
         <div className="flex items-center space-x-2">
