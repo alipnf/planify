@@ -6,7 +6,7 @@ import { useMessage } from '@/lib/hooks/use-message';
 import { useUser } from '@/lib/hooks/use-auth';
 import { SavedSchedule, saveSchedule } from '@/lib/services/schedules';
 
-export const useSharePage = (schedule: SavedSchedule) => {
+export function useSharePage(schedule: SavedSchedule) {
   const { user, loading } = useUser();
   const router = useRouter();
   const { showSuccess, showError } = useMessage();
@@ -52,5 +52,4 @@ export const useSharePage = (schedule: SavedSchedule) => {
     handleSaveClick,
     handleConfirmSave,
   };
-};
-
+}
