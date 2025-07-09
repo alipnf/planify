@@ -2,11 +2,10 @@ import { useRouter } from 'next/navigation';
 import { useForm, type FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createClient } from '@/lib/supabase/client';
-import { useMessage } from '@/lib/hooks/use-message';
+import { useAuthStore } from '@/lib/stores/auth';
 import type { ZodTypeAny } from 'zod';
 import type { AuthError } from '@supabase/supabase-js';
-import { useState, useEffect, useCallback } from 'react';
-import { type User } from '@supabase/supabase-js';
+import { useEffect } from 'react';
 
 interface ErrorMap {
   check: (msg: string) => boolean;
@@ -35,7 +34,6 @@ export function useAuth<T extends FieldValues>({
   errorMaps = [],
   redirectConfig,
 }: AuthConfig<T>) {
-  const { message, showError, showSuccess, clearMessage } = useMessage();
   const router = useRouter();
   const {
     register,
@@ -43,26 +41,39 @@ export function useAuth<T extends FieldValues>({
     formState: { errors, isSubmitting },
   } = useForm<T>({ resolver: zodResolver(schema) });
 
+  const setMessage = useAuthStore((state) => state.setMessage);
+  const setSubmitting = useAuthStore((state) => state.setSubmitting);
+
+  useEffect(() => {
+    setSubmitting(isSubmitting);
+  }, [isSubmitting, setSubmitting]);
+
   const onSubmit = async (data: T) => {
-    clearMessage();
+    setMessage(null);
     const supabase = createClient();
     try {
       const error = await handler(supabase, data);
       if (error) {
         const mapped = errorMaps.find(({ check }) => check(error.message));
         if (mapped) {
-          showError(mapped.message);
+          setMessage({ type: 'error', text: mapped.message });
         } else {
-          showError(error.message);
+          setMessage({ type: 'error', text: error.message });
         }
       } else {
-        showSuccess(successMessage);
+        setMessage({ type: 'success', text: successMessage });
         if (redirectConfig) {
           router.push(redirectConfig.path);
         }
+        setTimeout(() => {
+          setMessage(null);
+        }, 3000);
       }
     } catch (err) {
-      showError('Terjadi kesalahan. Silakan coba lagi.');
+      setMessage({
+        type: 'error',
+        text: 'Terjadi kesalahan. Silakan coba lagi.',
+      });
       console.error('Error in auth handler:', err);
     }
   };
@@ -71,38 +82,12 @@ export function useAuth<T extends FieldValues>({
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    message,
-    showError,
     onSubmit,
   };
 }
 
 export function useUser() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const supabase = createClient();
-
-  const getUser = useCallback(async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    setUser(user);
-    setLoading(false);
-  }, [supabase.auth]);
-
-  useEffect(() => {
-    getUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-      }
-    );
-
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
-  }, [getUser, supabase.auth]);
-
+  const user = useAuthStore((state) => state.user);
+  const loading = useAuthStore((state) => state.loading);
   return { user, loading };
 }

@@ -156,7 +156,6 @@ export function AIScheduler({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Wand2 className="h-5 w-5" />
             <span>Generator Jadwal AI</span>
           </CardTitle>
         </CardHeader>
@@ -178,7 +177,9 @@ export function AIScheduler({
           {/* Generate Button */}
           <Button
             onClick={generateScheduleOptions}
-            disabled={isGenerating || courses.length === 0}
+            disabled={
+              isGenerating || courses.length === 0 || prompt.trim() === ''
+            }
             className="w-full"
           >
             {isGenerating ? (

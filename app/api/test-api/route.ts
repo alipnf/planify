@@ -25,11 +25,9 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Koneksi berhasil! API key valid dan siap digunakan.',
     });
-  } catch (error: any) {
-    console.error('API Test Error:', error);
-
+  } catch (error: unknown) {
     let errorMessage = 'API key tidak valid atau terjadi kesalahan jaringan.';
-    const errorString = error.toString();
+    const errorString = String(error);
 
     if (errorString.includes('API key not valid')) {
       errorMessage = 'API key yang Anda masukkan tidak valid. Periksa kembali.';
@@ -44,4 +42,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

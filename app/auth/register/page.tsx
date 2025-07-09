@@ -16,8 +16,6 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    message,
-    showError,
     onSubmit,
   } = useAuth<RegisterFormData>({
     schema: registerSchema,
@@ -58,13 +56,11 @@ export default function RegisterPage() {
       <GoogleSignInButton
         text="Daftar dengan Google"
         loadingText="Daftar dengan Google..."
-        disabled={isSubmitting}
-        onError={showError}
       />
 
       <AuthSeparator />
 
-      <MessageDisplay message={message} className="mb-4" />
+      <MessageDisplay className="mb-4" />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <FormField

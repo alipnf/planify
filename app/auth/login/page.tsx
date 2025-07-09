@@ -15,8 +15,6 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    message,
-    showError,
     onSubmit,
   } = useAuth<LoginFormData>({
     schema: loginSchema,
@@ -53,13 +51,11 @@ export default function LoginPage() {
       <GoogleSignInButton
         text="Masuk dengan Google"
         loadingText="Masuk dengan Google..."
-        disabled={isSubmitting}
-        onError={showError}
       />
 
       <AuthSeparator />
 
-      <MessageDisplay message={message} className="mb-4" />
+      <MessageDisplay className="mb-4" />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <FormField

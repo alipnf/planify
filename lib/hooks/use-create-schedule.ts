@@ -1,18 +1,30 @@
+'use client';
+
 import { useState, useMemo, useCallback } from 'react';
+import { useCourses } from '@/lib/hooks/use-courses';
 import { Course } from '@/lib/types/course';
+import { saveSchedule } from '@/lib/services/schedules';
+import { useMessage } from '@/lib/hooks/use-message';
 import {
   detectTimeConflicts,
   calculateScheduleStats,
 } from '@/lib/schedule-utils';
 
-export function useScheduleManagement() {
+export const useCreateSchedule = () => {
+  const [activeTab, setActiveTab] = useState('manual');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const { showSuccess, showError } = useMessage();
+
+  const { courses, isLoading } = useCourses();
+
+  // --- Merged from useScheduleManagement ---
   const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSemester, setFilterSemester] = useState('all');
   const [filterClass, setFilterClass] = useState('all');
   const [groupByCode, setGroupByCode] = useState(false);
 
-  // Memoized computations
   const conflicts = useMemo(
     () => detectTimeConflicts(selectedCourses),
     [selectedCourses]
@@ -22,10 +34,9 @@ export function useScheduleManagement() {
     [selectedCourses]
   );
 
-  // Filter courses based on search, semester, and class
   const filterCourses = useCallback(
-    (courses: Course[]) => {
-      return courses.filter((course) => {
+    (coursesToFilter: Course[]) => {
+      return coursesToFilter.filter((course) => {
         const matchesSearch =
           searchQuery === '' ||
           course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -44,7 +55,6 @@ export function useScheduleManagement() {
     [searchQuery, filterSemester, filterClass]
   );
 
-  // Toggle course selection
   const toggleCourse = useCallback((course: Course) => {
     setSelectedCourses((prev) => {
       const isSelected = prev.find((c) => c.id === course.id);
@@ -56,38 +66,81 @@ export function useScheduleManagement() {
     });
   }, []);
 
-  // Clear all selections
   const clearAllSelections = useCallback(() => {
     setSelectedCourses([]);
   }, []);
 
-  // Set selected courses (for AI generation or loading saved schedules)
   const setSelectedCoursesDirectly = useCallback((courses: Course[]) => {
     setSelectedCourses(courses);
   }, []);
+  // --- End of merge ---
+
+  const filteredCourses = filterCourses(courses);
+
+  const handleAIEdit = (aiSelectedCourses: Course[]) => {
+    setSelectedCoursesDirectly(aiSelectedCourses);
+    setActiveTab('manual');
+  };
+
+  const handleAISave = (aiSelectedCourses: Course[]) => {
+    setSelectedCoursesDirectly(aiSelectedCourses);
+    if (aiSelectedCourses.length === 0) {
+      showError('Jadwal yang dipilih kosong.');
+      return;
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleSaveSchedule = () => {
+    if (selectedCourses.length === 0) {
+      showError('Tidak ada mata kuliah yang dipilih untuk disimpan.');
+      return;
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleConfirmSave = async (scheduleName: string) => {
+    setIsSaving(true);
+    try {
+      await saveSchedule(scheduleName, selectedCourses);
+      showSuccess(`Jadwal "${scheduleName}" berhasil disimpan.`);
+      setIsDialogOpen(false);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Terjadi kesalahan tidak dikenal.';
+      showError(errorMessage);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return {
-    // State
+    activeTab,
+    setActiveTab,
+    isDialogOpen,
+    setIsDialogOpen,
+    isSaving,
+    courses,
+    isLoading,
     selectedCourses,
     searchQuery,
     filterSemester,
     filterClass,
     groupByCode,
-
-    // Computed values
     conflicts,
     stats,
-
-    // Functions
-    filterCourses,
+    filteredCourses,
     toggleCourse,
     clearAllSelections,
-    setSelectedCoursesDirectly,
-
-    // Setters
     setSearchQuery,
     setFilterSemester,
     setFilterClass,
     setGroupByCode,
+    handleAIEdit,
+    handleAISave,
+    handleSaveSchedule,
+    handleConfirmSave,
   };
-}
+};
