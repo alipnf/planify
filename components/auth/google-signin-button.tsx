@@ -32,14 +32,17 @@ export function GoogleSignInButton({
         },
       });
       if (error) throw error;
-      if (data.url) window.location.href = data.url;
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('An unknown error occurred during Google Sign-In.');
+      }
     } catch (error) {
       setMessage({
         type: 'error',
         text: 'Gagal dengan Google. Silakan coba lagi.',
       });
       console.error('Error signing in:', error);
-    } finally {
       setIsLoading(false);
     }
   };
