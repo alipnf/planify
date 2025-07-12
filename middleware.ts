@@ -7,6 +7,7 @@ export async function middleware(req: NextRequest) {
     '/courses',
     '/create-schedule',
     '/saved',
+    '/share',
     '/settings',
   ];
 
