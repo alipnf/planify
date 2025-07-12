@@ -49,6 +49,7 @@ export default function CoursesPage() {
     selectedCourseNames,
     setShowBulkDeleteDialog,
     handleConfirmBulkDelete,
+    isSaving,
   } = useCourses();
 
   return (
@@ -114,6 +115,7 @@ export default function CoursesPage() {
         onOpenChange={setShowCourseModal}
         course={editingCourse}
         onSave={handleSaveCourse}
+        isSaving={isSaving}
       />
 
       <ImportCoursesModal

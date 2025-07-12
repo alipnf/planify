@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -32,6 +32,7 @@ interface CourseModalProps {
   onOpenChange: (open: boolean) => void;
   course?: Course | null;
   onSave: (course: Partial<Course>) => Promise<void>;
+  isSaving: boolean;
 }
 
 export function CourseModal({
@@ -39,9 +40,8 @@ export function CourseModal({
   onOpenChange,
   course,
   onSave,
+  isSaving,
 }: CourseModalProps) {
-  const [isLoading, setIsLoading] = useState(false);
-
   const {
     register,
     handleSubmit,
@@ -77,26 +77,16 @@ export function CourseModal({
   }, [course, setValue, reset]);
 
   const onSubmit = async (data: CreateCourseFormData) => {
-    setIsLoading(true);
+    // Validate time logic
+    const startTime = new Date(`2000-01-01T${data.startTime}:00`);
+    const endTime = new Date(`2000-01-01T${data.endTime}:00`);
 
-    try {
-      // Validate time logic
-      const startTime = new Date(`2000-01-01T${data.startTime}:00`);
-      const endTime = new Date(`2000-01-01T${data.endTime}:00`);
-
-      if (endTime <= startTime) {
-        toast.error('Jam selesai harus lebih besar dari jam mulai');
-        return;
-      }
-
-      await onSave(data);
-      reset();
-      onOpenChange(false);
-    } catch {
-      toast.error('Terjadi kesalahan saat menyimpan mata kuliah');
-    } finally {
-      setIsLoading(false);
+    if (endTime <= startTime) {
+      toast.error('Jam selesai harus lebih besar dari jam mulai');
+      return;
     }
+
+    await onSave(data);
   };
 
   return (
@@ -295,31 +285,17 @@ export function CourseModal({
             </div>
           </div>
 
-          {/* Form Actions */}
-          <div className="flex justify-end space-x-2 pt-4">
+          <div className="flex justify-end space-x-4 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={isLoading}
+              disabled={isSaving}
             >
               Batal
             </Button>
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isLoading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Menyimpan...</span>
-                </div>
-              ) : course ? (
-                'Perbarui'
-              ) : (
-                'Simpan'
-              )}
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? 'Menyimpan...' : course ? 'Perbarui' : 'Simpan'}
             </Button>
           </div>
         </form>

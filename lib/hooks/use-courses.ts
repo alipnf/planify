@@ -3,7 +3,6 @@ import { toast } from 'sonner';
 import {
   Course,
   CreateCourseData,
-  UpdateCourseData,
   CoursesState,
   CoursesActions,
 } from '@/lib/types/course';
@@ -30,6 +29,7 @@ export function useCourses(): CoursesState & CoursesActions {
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const [groupByCode, setGroupByCode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Delete confirmation states
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -100,75 +100,30 @@ export function useCourses(): CoursesState & CoursesActions {
   const loadCourses = useCallback(async () => {
     try {
       setIsLoading(true);
-      // Add small delay to allow authentication to initialize properly
-      await new Promise((resolve) => setTimeout(resolve, 500));
       const data = await coursesService.getAllCourses();
       setCourses(data);
     } catch (error) {
       console.error('Error loading courses:', error);
-      // Only show error if not on initial load (to avoid error on refresh)
-      if (courses.length === 0) {
-        // Retry once after a delay
-        try {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          const data = await coursesService.getAllCourses();
-          setCourses(data);
-        } catch (retryError) {
-          console.error('Error loading courses on retry:', retryError);
-          toast.error('Gagal memuat data mata kuliah');
-        }
-      } else {
-        toast.error('Gagal memuat data mata kuliah');
-      }
+      toast.error('Gagal memuat data mata kuliah.');
     } finally {
       setIsLoading(false);
     }
-  }, [courses.length]);
+  }, []);
 
   const handleSaveCourse = useCallback(
-    async (courseData: Partial<Course>) => {
+    async (courseData: Partial<CreateCourseData>) => {
+      setIsSaving(true);
+      const isUpdating = !!editingCourse;
+
       try {
-        const isUpdating = !!editingCourse;
-        setShowCourseModal(false);
-
         if (isUpdating && editingCourse) {
-          const oldIdentifier = {
-            course_code: editingCourse.code,
-            class_name: editingCourse.class,
-          };
-
-          const newCode = courseData.code ?? editingCourse.code;
-          const newClass = courseData.class ?? editingCourse.class;
-
-          if (
-            newCode !== editingCourse.code ||
-            newClass !== editingCourse.class
-          ) {
-            // Delete old course
-            await coursesService.deleteCourse(oldIdentifier);
-
-            // Create new course with updated data
-            const createData: CreateCourseData = {
-              code: newCode,
-              class: newClass,
-              name: courseData.name ?? editingCourse.name,
-              lecturer: courseData.lecturer ?? editingCourse.lecturer,
-              credits: courseData.credits ?? editingCourse.credits,
-              category: courseData.category ?? editingCourse.category,
-              room: courseData.room ?? editingCourse.room,
-              day: courseData.day ?? editingCourse.day,
-              startTime: courseData.startTime ?? editingCourse.startTime,
-              endTime: courseData.endTime ?? editingCourse.endTime,
-              semester: courseData.semester ?? editingCourse.semester,
-            };
-            await coursesService.createCourse(createData);
-          } else {
-            // Regular update
-            await coursesService.updateCourse(
-              oldIdentifier,
-              courseData as UpdateCourseData
-            );
-          }
+          await coursesService.updateCourse(
+            {
+              course_code: editingCourse.code,
+              class_name: editingCourse.class,
+            },
+            courseData
+          );
         } else {
           await coursesService.createCourse(courseData as CreateCourseData);
         }
@@ -177,11 +132,13 @@ export function useCourses(): CoursesState & CoursesActions {
         toast.success(
           `Mata kuliah berhasil ${isUpdating ? 'diperbarui' : 'ditambahkan'}`
         );
+        setShowCourseModal(false);
         setEditingCourse(null);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error saving course:', error);
-        toast.error('Gagal menyimpan mata kuliah');
-        setShowCourseModal(true); // Re-open modal on error
+        toast.error(error.message || 'Gagal menyimpan mata kuliah');
+      } finally {
+        setIsSaving(false);
       }
     },
     [editingCourse, loadCourses]
@@ -189,17 +146,22 @@ export function useCourses(): CoursesState & CoursesActions {
 
   const handleImportCourses = useCallback(
     async (importedCourses: CreateCourseData[]) => {
-      try {
-        setShowImportModal(false);
-        await coursesService.importCourses(importedCourses);
-        await loadCourses();
-        toast.success(
-          `${importedCourses.length} mata kuliah berhasil diimport`
-        );
-      } catch (error) {
-        console.error('Error importing courses:', error);
-        toast.error('Gagal mengimpor mata kuliah');
+      if (importedCourses.length === 0) {
+        toast.info('Tidak ada mata kuliah untuk diimpor.');
+        return;
       }
+      setShowImportModal(false);
+
+      const promise = coursesService.importCourses(importedCourses);
+
+      toast.promise(promise, {
+        loading: 'Mengimpor mata kuliah...',
+        success: (newCourses) => {
+          loadCourses(); // Refresh data after successful import
+          return `${newCourses.length} mata kuliah berhasil diimpor`;
+        },
+        error: (err) => err.message || 'Gagal mengimpor mata kuliah',
+      });
     },
     [loadCourses]
   );
@@ -224,7 +186,9 @@ export function useCourses(): CoursesState & CoursesActions {
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `mata_kuliah_export_${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `mata_kuliah_export_${
+      new Date().toISOString().split('T')[0]
+    }.json`;
     link.click();
 
     URL.revokeObjectURL(url);
@@ -250,11 +214,9 @@ export function useCourses(): CoursesState & CoursesActions {
 
   const handleSelectCourse = useCallback(
     (courseId: string, checked: boolean) => {
-      if (checked) {
-        setSelectedCourses((prev) => [...prev, courseId]);
-      } else {
-        setSelectedCourses((prev) => prev.filter((id) => id !== courseId));
-      }
+      setSelectedCourses((prev) =>
+        checked ? [...prev, courseId] : prev.filter((id) => id !== courseId)
+      );
     },
     []
   );
@@ -284,70 +246,72 @@ export function useCourses(): CoursesState & CoursesActions {
   }, [selectedCourses.length]);
 
   const handleConfirmDelete = useCallback(async () => {
-    if (courseToDelete) {
-      try {
-        const courseName = `${getFullCourseCode(courseToDelete)} - ${
-          courseToDelete.name
-        }`;
-        setShowDeleteDialog(false);
-        await coursesService.deleteCourse({
-          course_code: courseToDelete.code,
-          class_name: courseToDelete.class,
-        });
-        await loadCourses();
-        toast.success(`${courseName} berhasil dihapus`);
-        setCourseToDelete(null);
-      } catch (error) {
-        console.error('Error deleting course:', error);
-        toast.error('Gagal menghapus mata kuliah');
-        setShowDeleteDialog(true); // Re-open on error
-      }
+    if (!courseToDelete) return;
+
+    try {
+      const courseName = `${getFullCourseCode(courseToDelete)} - ${
+        courseToDelete.name
+      }`;
+      await coursesService.deleteCourse({
+        course_code: courseToDelete.code,
+        class_name: courseToDelete.class,
+      });
+      await loadCourses();
+      toast.success(`${courseName} berhasil dihapus`);
+      setShowDeleteDialog(false);
+      setCourseToDelete(null);
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      toast.error('Gagal menghapus mata kuliah');
     }
   }, [courseToDelete, loadCourses]);
 
   const handleConfirmBulkDelete = useCallback(async () => {
+    if (selectedCourses.length === 0) return;
+
+    const coursesToDelete = courses
+      .filter((c) => selectedCourses.includes(c.id))
+      .map((c) => ({ course_code: c.code, class_name: c.class }));
+
     try {
-      const count = selectedCourses.length;
-      const coursesToDelete = courses
-        .filter((c) => selectedCourses.includes(c.id))
-        .map((c) => ({ course_code: c.code, class_name: c.class }));
-
-      if (coursesToDelete.length === 0) {
-        toast.error('Tidak ada mata kuliah yang valid untuk dihapus.');
-        return;
-      }
-
-      setShowBulkDeleteDialog(false);
       await coursesService.deleteCourses(coursesToDelete);
       await loadCourses();
-      toast.success(`${count} mata kuliah berhasil dihapus`);
+      toast.success(`${coursesToDelete.length} mata kuliah berhasil dihapus`);
+      setShowBulkDeleteDialog(false);
       setSelectedCourses([]);
     } catch (error) {
-      console.error('Error deleting courses:', error);
-      toast.error('Gagal menghapus mata kuliah');
-      setShowBulkDeleteDialog(true); // Re-open on error
+      console.error('Error bulk deleting courses:', error);
+      toast.error('Gagal menghapus beberapa mata kuliah');
     }
-  }, [selectedCourses, loadCourses, courses]);
+  }, [selectedCourses, courses, loadCourses]);
 
+  // Return values
   return {
-    // State
+    // Data
     courses,
     filteredCourses,
     groupedCourses,
     availableClasses,
     selectedCourseNames,
+
+    // UI State
     searchQuery,
     selectedCourses,
     selectedSemester,
     selectedClass,
     groupByCode,
     isLoading,
+    isSaving,
+
+    // Modal States
     showCourseModal,
     showImportModal,
     showDeleteDialog,
     showBulkDeleteDialog,
     editingCourse,
     courseToDelete,
+
+    // Computed values
     allSelected,
     someSelected,
     hasFilters,
