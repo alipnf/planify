@@ -31,7 +31,7 @@ interface CourseModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   course?: Course | null;
-  onSave: (course: Partial<Course>) => void;
+  onSave: (course: Partial<Course>) => Promise<void>;
 }
 
 export function CourseModal({
@@ -86,15 +86,12 @@ export function CourseModal({
 
       if (endTime <= startTime) {
         toast.error('Jam selesai harus lebih besar dari jam mulai');
-        setIsLoading(false);
         return;
       }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      onSave(data);
+      await onSave(data);
       reset();
+      onOpenChange(false);
     } catch {
       toast.error('Terjadi kesalahan saat menyimpan mata kuliah');
     } finally {
