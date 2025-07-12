@@ -1,221 +1,283 @@
 import { createClient } from '@/lib/supabase/client';
-import { Course, CreateCourseData, UpdateCourseData } from '@/lib/types/course';
+import {
+  Course,
+  CreateCourseData,
+  UpdateCourseData,
+  CourseFromSupabase,
+  CourseDefinition,
+} from '@/lib/types/course';
 
-// Initialize Supabase client
 const supabase = createClient();
 
-// Utility function: Transform camelCase to snake_case for database
-export function transformToDbFormat(
-  data: CreateCourseData | UpdateCourseData | Partial<CreateCourseData>
-): Record<string, unknown> {
-  const result: Record<string, unknown> = { ...data };
-
-  // Transform time fields and ensure HH:MM format
-  if ('startTime' in data && data.startTime) {
-    result.start_time = data.startTime.substring(0, 5); // Ensure HH:MM format
-    delete result.startTime;
-  }
-  if ('endTime' in data && data.endTime) {
-    result.end_time = data.endTime.substring(0, 5); // Ensure HH:MM format
-    delete result.endTime;
-  }
-
-  return result;
+async function getCurrentUser() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated.');
+  return user;
 }
 
-// Utility function: Transform snake_case to camelCase for frontend
-export function transformFromDbFormat(data: Record<string, unknown>): Course {
-  const result: Record<string, unknown> = {};
-
-  // Copy all properties except time fields
-  Object.keys(data).forEach((key) => {
-    if (key !== 'start_time' && key !== 'end_time') {
-      result[key] = data[key];
-    }
-  });
-
-  // Transform time fields
-  if (data.start_time) {
-    result.startTime = data.start_time;
+function transformToCourse(data: CourseFromSupabase): Course {
+  if (!data.course_definition || !data.lecturer) {
+    console.warn('Incomplete course data received:', data);
+    return {
+      id: `${data.course_code}-${data.class_name}`,
+      code: data.course_code,
+      name: data.course_definition?.name || 'N/A',
+      lecturer: data.lecturer?.name || 'N/A',
+      credits: data.course_definition?.credits || 0,
+      category: data.course_definition?.category || 'pilihan',
+      class: data.class_name,
+      room: data.room_name,
+      day: data.day_of_week,
+      startTime: data.start_time?.substring(0, 5) || '00:00',
+      endTime: data.end_time?.substring(0, 5) || '00:00',
+      semester: data.semester,
+      user_id: data.user_id,
+      created_at: data.created_at,
+    };
   }
-  if (data.end_time) {
-    result.endTime = data.end_time;
-  }
 
-  return result as unknown as Course;
+  return {
+    id: `${data.course_code}-${data.class_name}`,
+    code: data.course_code,
+    name: data.course_definition.name,
+    lecturer: data.lecturer.name,
+    credits: data.course_definition.credits,
+    category: data.course_definition.category,
+    class: data.class_name,
+    room: data.room_name,
+    day: data.day_of_week,
+    startTime: data.start_time.substring(0, 5),
+    endTime: data.end_time.substring(0, 5),
+    semester: data.semester,
+    user_id: data.user_id,
+    created_at: data.created_at,
+  };
 }
 
-// Utility function: Get current authenticated user
-export async function getCurrentUser() {
-  try {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error) {
-      console.error('Error getting current user:', error);
-      return null;
-    }
-
-    return user;
-  } catch (error) {
-    console.error('Error in getCurrentUser:', error);
-    return null;
-  }
-}
-
-// Course service functions
 export async function getAllCourses(): Promise<Course[]> {
-  try {
-    const { data, error } = await supabase
-      .from('courses')
-      .select('*')
-      .order('semester', { ascending: true })
-      .order('code', { ascending: true })
-      .order('class', { ascending: true });
+  const user = await getCurrentUser();
+  const { data, error } = await supabase
+    .from('courses')
+    .select(
+      `
+      *,
+      course_definition:course_definitions(*),
+      lecturer:lecturers(*)
+    `
+    )
+    .eq('user_id', user.id)
+    .order('semester', { ascending: true })
+    .order('course_code', { ascending: true })
+    .order('class_name', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching courses:', error);
-      throw new Error(`Failed to fetch courses: ${error.message}`);
-    }
-
-    return (data || []).map((course) => transformFromDbFormat(course));
-  } catch (error) {
-    console.error('Error in getAllCourses:', error);
-    throw error;
+  if (error) {
+    console.error('Error fetching courses:', error);
+    throw new Error(`Failed to fetch courses: ${error.message}`);
   }
+
+  return (data || []).map(transformToCourse);
 }
 
 export async function createCourse(
   courseData: CreateCourseData
 ): Promise<Course> {
-  try {
-    const user = await getCurrentUser();
+  const user = await getCurrentUser();
 
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
+  const { data: lecturer, error: lecturerError } = await supabase
+    .from('lecturers')
+    .upsert({ name: courseData.lecturer }, { onConflict: 'name' })
+    .select('id, name')
+    .single();
 
-    // Transform camelCase to snake_case for database
-    const dbData = transformToDbFormat(courseData);
-
-    const { data, error } = await supabase
-      .from('courses')
-      .insert({
-        ...dbData,
-        user_id: user.id,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating course:', error);
-      throw new Error(`Failed to create course: ${error.message}`);
-    }
-
-    return transformFromDbFormat(data);
-  } catch (error) {
-    console.error('Error in createCourse:', error);
-    throw error;
+  if (lecturerError) {
+    console.error('Error upserting lecturer:', lecturerError);
+    throw new Error(`Failed to upsert lecturer: ${lecturerError.message}`);
   }
+
+  const { data: definition, error: definitionError } = await supabase
+    .from('course_definitions')
+    .upsert(
+      {
+        code: courseData.code,
+        name: courseData.name,
+        credits: courseData.credits,
+        category: courseData.category,
+      },
+      { onConflict: 'code' }
+    )
+    .select('code, name, credits, category')
+    .single();
+
+  if (definitionError) {
+    console.error('Error upserting course definition:', definitionError);
+    throw new Error(
+      `Failed to upsert course definition: ${definitionError.message}`
+    );
+  }
+
+  const { data: newCourse, error: courseError } = await supabase
+    .from('courses')
+    .insert({
+      user_id: user.id,
+      course_code: definition.code,
+      lecturer_id: lecturer.id,
+      class_name: courseData.class,
+      room_name: courseData.room,
+      day_of_week: courseData.day,
+      start_time: courseData.startTime,
+      end_time: courseData.endTime,
+      semester: courseData.semester,
+    })
+    .select('*')
+    .single();
+
+  if (courseError) {
+    console.error('Error creating course:', courseError);
+    throw new Error(`Failed to create course: ${courseError.message}`);
+  }
+
+  return transformToCourse({
+    ...newCourse,
+    course_definition: definition,
+    lecturer: lecturer,
+  });
 }
 
 export async function updateCourse(
-  courseData: UpdateCourseData
+  courseIdentifier: { course_code: string; class_name: string },
+  courseData: Partial<UpdateCourseData>
 ): Promise<Course> {
-  try {
-    const { id, ...updateData } = courseData;
+  const user = await getCurrentUser();
+  let lecturerId: string | undefined = undefined;
 
-    // Transform camelCase to snake_case for database
-    const dbUpdateData = transformToDbFormat(updateData);
-
-    const { data, error } = await supabase
-      .from('courses')
-      .update(dbUpdateData)
-      .eq('id', id)
-      .select()
+  if (courseData.lecturer) {
+    const { data: lecturer, error: lecturerError } = await supabase
+      .from('lecturers')
+      .upsert({ name: courseData.lecturer }, { onConflict: 'name' })
+      .select('id')
       .single();
+    if (lecturerError) throw new Error('Failed to update lecturer');
+    lecturerId = lecturer.id;
+  }
 
-    if (error) {
-      console.error('Error updating course:', error);
-      throw new Error(`Failed to update course: ${error.message}`);
+  if (courseData.name || courseData.credits || courseData.category) {
+    const definitionUpdate: Partial<Omit<CourseDefinition, 'code'>> = {};
+    if (courseData.name) definitionUpdate.name = courseData.name;
+    if (courseData.credits) definitionUpdate.credits = courseData.credits;
+    if (courseData.category) definitionUpdate.category = courseData.category;
+
+    const { error: definitionError } = await supabase
+      .from('course_definitions')
+      .update(definitionUpdate)
+      .eq('code', courseIdentifier.course_code);
+    if (definitionError) throw new Error('Failed to update course definition');
+  }
+
+  const courseUpdate: Partial<{
+    lecturer_id: string;
+    room_name: string;
+    day_of_week: string;
+    start_time: string;
+    end_time: string;
+    semester: string;
+  }> = {};
+  if (lecturerId) courseUpdate.lecturer_id = lecturerId;
+  if (courseData.room) courseUpdate.room_name = courseData.room;
+  if (courseData.day) courseUpdate.day_of_week = courseData.day;
+  if (courseData.startTime) courseUpdate.start_time = courseData.startTime;
+  if (courseData.endTime) courseUpdate.end_time = courseData.endTime;
+  if (courseData.semester) courseUpdate.semester = courseData.semester;
+
+  if (Object.keys(courseUpdate).length > 0) {
+    const { error: courseError } = await supabase
+      .from('courses')
+      .update(courseUpdate)
+      .match({
+        user_id: user.id,
+        course_code: courseIdentifier.course_code,
+        class_name: courseIdentifier.class_name,
+      });
+
+    if (courseError) {
+      console.error('Error updating course instance:', courseError);
+      throw new Error('Failed to update course instance');
     }
+  }
 
-    return transformFromDbFormat(data);
-  } catch (error) {
-    console.error('Error in updateCourse:', error);
-    throw error;
+  const { data: updatedCourseData, error: fetchError } = await supabase
+    .from('courses')
+    .select('*, course_definition:course_definitions(*), lecturer:lecturers(*)')
+    .match({
+      user_id: user.id,
+      course_code: courseIdentifier.course_code,
+      class_name: courseIdentifier.class_name,
+    })
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching updated course:', fetchError);
+    throw new Error('Failed to fetch updated course data');
+  }
+
+  return transformToCourse(updatedCourseData);
+}
+
+export async function deleteCourse(courseIdentifier: {
+  course_code: string;
+  class_name: string;
+}): Promise<void> {
+  const user = await getCurrentUser();
+  const { error } = await supabase.from('courses').delete().match({
+    user_id: user.id,
+    course_code: courseIdentifier.course_code,
+    class_name: courseIdentifier.class_name,
+  });
+
+  if (error) {
+    console.error('Error deleting course:', error);
+    throw new Error(`Failed to delete course: ${error.message}`);
   }
 }
 
-export async function deleteCourse(courseId: string): Promise<void> {
-  try {
-    const { error } = await supabase
-      .from('courses')
-      .delete()
-      .eq('id', courseId);
-
+export async function deleteCourses(
+  courseIdentifiers: { course_code: string; class_name: string }[]
+): Promise<void> {
+  const user = await getCurrentUser();
+  for (const identifier of courseIdentifiers) {
+    const { error } = await supabase.from('courses').delete().match({
+      user_id: user.id,
+      course_code: identifier.course_code,
+      class_name: identifier.class_name,
+    });
     if (error) {
-      console.error('Error deleting course:', error);
-      throw new Error(`Failed to delete course: ${error.message}`);
+      console.warn(
+        `Failed to delete course ${identifier.course_code}-${identifier.class_name}:`,
+        error.message
+      );
     }
-  } catch (error) {
-    console.error('Error in deleteCourse:', error);
-    throw error;
-  }
-}
-
-export async function deleteCourses(courseIds: string[]): Promise<void> {
-  try {
-    const { error } = await supabase
-      .from('courses')
-      .delete()
-      .in('id', courseIds);
-
-    if (error) {
-      console.error('Error deleting courses:', error);
-      throw new Error(`Failed to delete courses: ${error.message}`);
-    }
-  } catch (error) {
-    console.error('Error in deleteCourses:', error);
-    throw error;
   }
 }
 
 export async function importCourses(
   courses: CreateCourseData[]
 ): Promise<Course[]> {
-  try {
-    const user = await getCurrentUser();
-
-    if (!user) {
-      throw new Error('User not authenticated');
+  const imported: Course[] = [];
+  for (const courseData of courses) {
+    try {
+      const newCourse = await createCourse(courseData);
+      imported.push(newCourse);
+    } catch (error) {
+      console.error(
+        `Failed to import course ${courseData.code} - ${courseData.class}:`,
+        error
+      );
     }
-
-    const coursesWithUserId = courses.map((course) => ({
-      ...transformToDbFormat(course),
-      user_id: user.id,
-    }));
-
-    const { data, error } = await supabase
-      .from('courses')
-      .insert(coursesWithUserId)
-      .select();
-
-    if (error) {
-      console.error('Error importing courses:', error);
-      throw new Error(`Failed to import courses: ${error.message}`);
-    }
-
-    return (data || []).map((course) => transformFromDbFormat(course));
-  } catch (error) {
-    console.error('Error in importCourses:', error);
-    throw error;
   }
+  return imported;
 }
 
-// Legacy object-style export for backward compatibility
 export const coursesService = {
   getAllCourses,
   createCourse,
