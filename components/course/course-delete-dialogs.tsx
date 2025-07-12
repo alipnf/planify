@@ -77,34 +77,34 @@ export function CourseDeleteDialogs({
               Apakah Anda yakin ingin menghapus {selectedCount} mata kuliah yang
               dipilih?
               {selectedCourseNames.length <= 3 ? (
-                <div className="mt-2 space-y-1">
+                <span className="mt-2 block space-y-1">
                   {selectedCourseNames.map((name, index) => (
-                    <div
+                    <span
                       key={index}
-                      className="text-sm font-medium text-gray-900"
+                      className="block text-sm font-medium text-gray-900"
                     >
                       • {name}
-                    </div>
+                    </span>
                   ))}
-                </div>
+                </span>
               ) : (
-                <div className="mt-2 space-y-1">
+                <span className="mt-2 block space-y-1">
                   {selectedCourseNames.slice(0, 3).map((name, index) => (
-                    <div
+                    <span
                       key={index}
-                      className="text-sm font-medium text-gray-900"
+                      className="block text-sm font-medium text-gray-900"
                     >
                       • {name}
-                    </div>
+                    </span>
                   ))}
-                  <div className="text-sm text-gray-600">
+                  <span className="block text-sm text-gray-600">
                     dan {selectedCourseNames.length - 3} mata kuliah lainnya...
-                  </div>
-                </div>
+                  </span>
+                </span>
               )}
-              <div className="mt-2 text-sm text-red-600">
+              <span className="mt-2 block text-sm text-red-600">
                 Tindakan ini tidak dapat dibatalkan.
-              </div>
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
