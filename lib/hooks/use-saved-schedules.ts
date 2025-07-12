@@ -6,8 +6,8 @@ import {
   deleteSavedSchedule,
   saveSchedule,
   updateScheduleSharing,
-  type SavedSchedule,
 } from '@/lib/services/schedules';
+import { SavedSchedule } from '@/lib/types/schedule';
 import { useMessage } from './use-message';
 import type { Course } from '@/lib/types/course';
 import { detectTimeConflicts } from '@/lib/schedule-utils';
@@ -175,7 +175,7 @@ export function useSavedSchedules() {
       if (!updatedSchedule) return;
       targetSchedule = updatedSchedule;
     }
-    const url = `${window.location.origin}/share/${targetSchedule.share_id}`;
+    const url = `${window.location.origin}/share/${targetSchedule.id}`;
     setShareUrl(url);
     setShowShareDialog(true);
   };
