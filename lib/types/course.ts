@@ -147,3 +147,30 @@ export interface CoursesActions {
   setShowDeleteDialog: (show: boolean) => void;
   setShowBulkDeleteDialog: (show: boolean) => void;
 }
+
+export interface CourseDefinition {
+  code: string;
+  name: string;
+  category: 'wajib' | 'pilihan';
+  credits: number;
+}
+
+export interface Lecturer {
+  id: string;
+  name: string;
+}
+
+export interface CourseFromSupabase {
+  course_code: string;
+  class_name: string;
+  lecturer_id: string;
+  user_id: string;
+  room_name: string;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  semester: string;
+  created_at: string;
+  course_definition: CourseDefinition | null;
+  lecturer: Lecturer | null;
+}

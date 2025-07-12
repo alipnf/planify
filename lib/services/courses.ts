@@ -117,25 +117,29 @@ export async function createCourse(
     );
   }
 
+  const courseInsertData = {
+    user_id: user.id,
+    course_code: definition.code,
+    lecturer_id: lecturer.id,
+    class_name: courseData.class,
+    room_name: courseData.room,
+    day_of_week: courseData.day,
+    start_time: courseData.startTime,
+    end_time: courseData.endTime,
+    semester: courseData.semester,
+  };
+
   const { data: newCourse, error: courseError } = await supabase
     .from('courses')
-    .insert({
-      user_id: user.id,
-      course_code: definition.code,
-      lecturer_id: lecturer.id,
-      class_name: courseData.class,
-      room_name: courseData.room,
-      day_of_week: courseData.day,
-      start_time: courseData.startTime,
-      end_time: courseData.endTime,
-      semester: courseData.semester,
+    .upsert(courseInsertData, {
+      onConflict: 'user_id, course_code, class_name'
     })
     .select('*')
     .single();
 
   if (courseError) {
-    console.error('Error creating course:', courseError);
-    throw new Error(`Failed to create course: ${courseError.message}`);
+    console.error('Error upserting course:', courseError);
+    throw new Error(`Failed to upsert course: ${courseError.message}`);
   }
 
   return transformToCourse({
@@ -245,6 +249,7 @@ export async function deleteCourses(
   courseIdentifiers: { course_code: string; class_name: string }[]
 ): Promise<void> {
   const user = await getCurrentUser();
+  const errors: string[] = [];
   for (const identifier of courseIdentifiers) {
     const { error } = await supabase.from('courses').delete().match({
       user_id: user.id,
@@ -252,11 +257,12 @@ export async function deleteCourses(
       class_name: identifier.class_name,
     });
     if (error) {
-      console.warn(
-        `Failed to delete course ${identifier.course_code}-${identifier.class_name}:`,
-        error.message
-      );
+      errors.push(`Failed to delete course ${identifier.course_code}-${identifier.class_name}: ${error.message}`);
     }
+  }
+  if (errors.length > 0) {
+    console.error('Errors deleting courses:', errors);
+    throw new Error(`Failed to delete some courses: ${errors.join('; ')}`);
   }
 }
 
