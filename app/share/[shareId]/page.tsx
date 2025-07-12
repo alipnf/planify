@@ -1,8 +1,6 @@
-import { getScheduleByShareId } from '@/lib/services/schedules';
+import { getSharedScheduleById } from '@/lib/services/schedules';
 import { ShareClientPage } from './share-client-page';
 import { notFound } from 'next/navigation';
-
-export const revalidate = 60; // Revalidate data every 60 seconds
 
 export default async function SharePage({
   params,
@@ -10,7 +8,7 @@ export default async function SharePage({
   params: Promise<{ shareId: string }>;
 }) {
   const { shareId } = await params;
-  const schedule = await getScheduleByShareId(shareId);
+  const schedule = await getSharedScheduleById(shareId);
 
   if (!schedule) {
     notFound();

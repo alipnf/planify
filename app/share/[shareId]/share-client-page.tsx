@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { SavedSchedule } from '@/lib/services/schedules';
 import { WeeklySchedule } from '@/components/schedule/weekly-schedule';
 import {
   Card,
@@ -16,12 +15,10 @@ import { SaveScheduleDialog } from '@/components/schedule/save-schedule-dialog';
 import { SelectedCourseList } from '@/components/saved/selected-course-list';
 import { useSharePage } from '@/lib/hooks/use-share-page';
 import { detectTimeConflicts } from '@/lib/schedule-utils';
+import { SavedSchedule } from '@/lib/types/schedule';
 
-interface ShareClientPageProps {
-  schedule: SavedSchedule;
-}
-
-export function ShareClientPage({ schedule }: ShareClientPageProps) {
+export function ShareClientPage({ schedule }: { schedule: SavedSchedule }) {
+  console.log(schedule);
   const {
     loading,
     showSaveDialog,
