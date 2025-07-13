@@ -35,18 +35,9 @@ export default function SavedSchedulesPage() {
     setShowDeleteAlert,
     scheduleToDelete,
     activeSchedule,
-    showImportDialog,
     setShowImportDialog,
-    showShareDialog,
-    setShowShareDialog,
-    shareUrl,
-    handleDeleteClick,
     handleConfirmDelete,
-    handlePreviewClick,
     closePreview,
-    handleExport,
-    handleShareClick,
-    handleImport,
   } = useSavedSchedules();
 
   useEffect(() => {
@@ -86,15 +77,7 @@ export default function SavedSchedulesPage() {
         ) : !isLoading && schedules.length === 0 ? (
           <EmptyState />
         ) : (
-          <ScheduleGrid
-            schedules={schedules}
-            isLoading={isLoading}
-            activeScheduleId={activeSchedule?.id || null}
-            onDelete={handleDeleteClick}
-            onPreview={handlePreviewClick}
-            onExport={handleExport}
-            onShare={handleShareClick}
-          />
+          <ScheduleGrid />
         )}
 
         {activeSchedule && (
@@ -111,9 +94,7 @@ export default function SavedSchedulesPage() {
               <CardContent>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div className="lg:col-span-1">
-                    <SelectedCourseList
-                      selectedCourses={selectedCourses() || []}
-                    />
+                    <SelectedCourseList />
                   </div>
                   <div className="lg:col-span-2">
                     <WeeklySchedule
@@ -158,17 +139,8 @@ export default function SavedSchedulesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <ImportScheduleDialog
-        open={showImportDialog}
-        onOpenChange={setShowImportDialog}
-        onImport={handleImport}
-      />
-
-      <ShareDialog
-        open={showShareDialog}
-        onOpenChange={setShowShareDialog}
-        shareUrl={shareUrl}
-      />
+      <ImportScheduleDialog />
+      <ShareDialog />
     </div>
   );
 }

@@ -16,30 +16,31 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
-import type { SavedSchedule } from '@/lib/services/schedules';
+import type { SavedSchedule } from '@/lib/types/schedule';
+import type { Course } from '@/lib/types/course';
+import { useSavedSchedulesStore } from '@/lib/stores/saved';
 import { cn } from '@/lib/utils';
 
 interface ScheduleCardProps {
   schedule: SavedSchedule;
   isActive: boolean;
-  onDelete: (schedule: SavedSchedule) => void;
-  onPreview: (schedule: SavedSchedule) => void;
-  onExport: (schedule: SavedSchedule) => void;
-  onShare: (schedule: SavedSchedule) => void;
 }
 
-export function ScheduleCard({
-  schedule,
-  isActive,
-  onDelete,
-  onPreview,
-  onExport,
-  onShare,
-}: ScheduleCardProps) {
+export function ScheduleCard({ schedule, isActive }: ScheduleCardProps) {
+  const {
+    handleDeleteClick,
+    handlePreviewClick,
+    handleExport,
+    handleShareClick,
+  } = useSavedSchedulesStore();
+
   const { totalCredits, courseCount } = useMemo(() => {
     const courses = schedule.schedule_data || [];
     return {
-      totalCredits: courses.reduce((sum, course) => sum + course.credits, 0),
+      totalCredits: courses.reduce(
+        (sum: number, course: Course) => sum + course.credits,
+        0
+      ),
       courseCount: courses.length,
     };
   }, [schedule.schedule_data]);
@@ -69,25 +70,33 @@ export function ScheduleCard({
         </div>
       </CardContent>
       <CardFooter className="flex justify-between items-center">
-        <Button variant="outline" size="sm" onClick={() => onPreview(schedule)}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePreviewClick(schedule)}
+        >
           <Eye className="h-4 w-4 mr-2" />
           Lihat
         </Button>
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="icon" onClick={() => onShare(schedule)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleShareClick(schedule)}
+          >
             <Share className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onExport(schedule)}
+            onClick={() => handleExport(schedule)}
           >
             <Upload className="h-4 w-4" />
           </Button>
           <Button
             variant="destructive"
             size="icon"
-            onClick={() => onDelete(schedule)}
+            onClick={() => handleDeleteClick(schedule)}
           >
             <Trash2 className="h-4 w-4" />
           </Button>

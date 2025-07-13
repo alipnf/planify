@@ -11,18 +11,11 @@ import { Label } from '@/components/ui/label';
 import { Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 import { useMessage } from '@/lib/hooks/use-message';
+import { useSavedSchedulesStore } from '@/lib/stores/saved';
 
-interface ShareDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  shareUrl: string;
-}
-
-export function ShareDialog({
-  open,
-  onOpenChange,
-  shareUrl,
-}: ShareDialogProps) {
+export function ShareDialog() {
+  const { showShareDialog, setShowShareDialog, shareUrl } =
+    useSavedSchedulesStore();
   const [hasCopied, setHasCopied] = useState(false);
   const { showSuccess } = useMessage();
 
@@ -34,7 +27,7 @@ export function ShareDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Bagikan Jadwal</DialogTitle>
