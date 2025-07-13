@@ -11,41 +11,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Save } from 'lucide-react';
+import { useCreateSchedule } from '@/lib/hooks/use-create-schedule';
 
-interface SaveScheduleDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (scheduleName: string) => Promise<void>;
-  isSaving: boolean;
-  defaultScheduleName?: string;
-}
-
-export function SaveScheduleDialog({
-  isOpen,
-  onClose,
-  onSave,
-  isSaving,
-  defaultScheduleName = '',
-}: SaveScheduleDialogProps) {
-  const [scheduleName, setScheduleName] = useState(defaultScheduleName);
+export function SaveScheduleDialog() {
+  const { isDialogOpen, setIsDialogOpen, isSaving, handleConfirmSave } =
+    useCreateSchedule();
+  const [scheduleName, setScheduleName] = useState('');
 
   useEffect(() => {
-    setScheduleName(defaultScheduleName);
-  }, [defaultScheduleName, isOpen]);
+    setScheduleName('');
+  }, [isDialogOpen]);
 
   const handleSave = async () => {
     if (scheduleName.trim()) {
-      await onSave(scheduleName.trim());
+      await handleConfirmSave(scheduleName.trim());
     }
   };
 
   const handleClose = () => {
     if (isSaving) return;
-    onClose();
+    setIsDialogOpen(false);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isDialogOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">

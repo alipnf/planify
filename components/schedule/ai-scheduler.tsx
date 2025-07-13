@@ -17,6 +17,8 @@ import { formatTimeRange } from '@/lib/course-utils';
 import { WeeklySchedule } from './weekly-schedule';
 import { Textarea } from '../ui/textarea';
 import { CategoryBadge } from '../ui/category-badge';
+import { useCoursesStore } from '@/lib/stores/courses';
+import { useCreateSchedule } from '@/lib/hooks/use-create-schedule';
 
 interface SchedulePreferences {
   targetCredits: number;
@@ -34,20 +36,10 @@ interface ScheduleOptionView {
   totalCredits: number;
 }
 
-export interface AISchedulerProps {
-  courses: Course[];
-  onEdit: (selectedCourses: Course[]) => void;
-  onSave: (selectedCourses: Course[]) => void;
-  isLoading?: boolean;
-  hidePrompt?: boolean;
-}
+export function AIScheduler() {
+  const { courses, isLoading } = useCoursesStore();
+  const { handleAIEdit, handleAISave } = useCreateSchedule();
 
-export function AIScheduler({
-  courses,
-  onEdit,
-  onSave,
-  isLoading = false,
-}: AISchedulerProps) {
   const preferences: SchedulePreferences = {
     targetCredits: 20,
     maxDailyCredits: 8,
@@ -330,14 +322,14 @@ export function AIScheduler({
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={() => onEdit(option.courses)}
+                        onClick={() => handleAIEdit(option.courses)}
                         className="flex-1"
                       >
                         <Wand2 className="mr-2 h-4 w-4" />
                         Edit
                       </Button>
                       <Button
-                        onClick={() => onSave(option.courses)}
+                        onClick={() => handleAISave(option.courses)}
                         className="flex-1"
                       >
                         <Save className="mr-2 h-4 w-4" />
