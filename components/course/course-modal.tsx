@@ -20,28 +20,23 @@ import {
 } from '@/components/ui/select';
 
 import { toast } from 'sonner';
-import { Course } from '@/lib/types/course';
 
 import {
   createCourseSchema,
   type CreateCourseFormData,
 } from '@/lib/schemas/course';
 
-interface CourseModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  course?: Course | null;
-  onSave: (course: Partial<Course>) => Promise<void>;
-  isSaving: boolean;
-}
+import { useCoursesStore } from '@/lib/stores/courses';
 
-export function CourseModal({
-  open,
-  onOpenChange,
-  course,
-  onSave,
-  isSaving,
-}: CourseModalProps) {
+export function CourseModal() {
+  const {
+    showCourseModal,
+    setShowCourseModal,
+    editingCourse,
+    handleSaveCourse,
+    isSaving,
+  } = useCoursesStore();
+
   const {
     register,
     handleSubmit,
@@ -56,25 +51,25 @@ export function CourseModal({
   const watchedValues = watch();
 
   useEffect(() => {
-    if (course) {
+    if (editingCourse) {
       // Pre-fill form with course data
-      setValue('code', course.code);
-      setValue('name', course.name);
-      setValue('lecturer', course.lecturer);
-      setValue('credits', course.credits);
-      setValue('room', course.room);
-      setValue('day', course.day);
+      setValue('code', editingCourse.code);
+      setValue('name', editingCourse.name);
+      setValue('lecturer', editingCourse.lecturer);
+      setValue('credits', editingCourse.credits);
+      setValue('room', editingCourse.room);
+      setValue('day', editingCourse.day);
       // Convert time format from HH:MM:SS to HH:MM for time inputs
-      setValue('startTime', course.startTime.substring(0, 5));
-      setValue('endTime', course.endTime.substring(0, 5));
-      setValue('semester', course.semester);
-      setValue('category', course.category);
-      setValue('class', course.class);
+      setValue('startTime', editingCourse.startTime.substring(0, 5));
+      setValue('endTime', editingCourse.endTime.substring(0, 5));
+      setValue('semester', editingCourse.semester);
+      setValue('category', editingCourse.category);
+      setValue('class', editingCourse.class);
     } else {
       // Reset form for new course
       reset();
     }
-  }, [course, setValue, reset]);
+  }, [editingCourse, setValue, reset]);
 
   const onSubmit = async (data: CreateCourseFormData) => {
     // Validate time logic
@@ -86,18 +81,18 @@ export function CourseModal({
       return;
     }
 
-    await onSave(data);
+    await handleSaveCourse(data);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={showCourseModal} onOpenChange={setShowCourseModal}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {course ? 'Edit Mata Kuliah' : 'Tambah Mata Kuliah'}
+            {editingCourse ? 'Edit Mata Kuliah' : 'Tambah Mata Kuliah'}
           </DialogTitle>
           <DialogDescription>
-            {course
+            {editingCourse
               ? 'Perbarui informasi mata kuliah'
               : 'Tambahkan mata kuliah baru ke dalam sistem'}
           </DialogDescription>
@@ -289,13 +284,17 @@ export function CourseModal({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => setShowCourseModal(false)}
               disabled={isSaving}
             >
               Batal
             </Button>
             <Button type="submit" disabled={isSaving}>
-              {isSaving ? 'Menyimpan...' : course ? 'Perbarui' : 'Simpan'}
+              {isSaving
+                ? 'Menyimpan...'
+                : editingCourse
+                  ? 'Perbarui'
+                  : 'Simpan'}
             </Button>
           </div>
         </form>

@@ -11,36 +11,26 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useCoursesStore } from '@/lib/stores/courses';
 
-interface CourseFiltersProps {
-  searchQuery: string;
-  selectedSemester: string;
-  selectedClass: string;
-  groupByCode: boolean;
-  availableClasses: string[];
-  onSearchChange: (query: string) => void;
-  onSemesterChange: (semester: string) => void;
-  onClassChange: (classValue: string) => void;
-  onGroupByCodeChange: (group: boolean) => void;
-  onExport: () => void;
-  onImport: () => void;
-  onAddCourse: () => void;
-}
+export function CourseFilters() {
+  const {
+    searchQuery,
+    selectedSemester,
+    selectedClass,
+    groupByCode,
+    availableClasses,
+    setSearchQuery,
+    setSelectedSemester,
+    setSelectedClass,
+    setGroupByCode,
+    handleExportAll,
+    setShowImportModal,
+    handleAddCourse,
+  } = useCoursesStore();
 
-export function CourseFilters({
-  searchQuery,
-  selectedSemester,
-  selectedClass,
-  groupByCode,
-  availableClasses,
-  onSearchChange,
-  onSemesterChange,
-  onClassChange,
-  onGroupByCodeChange,
-  onExport,
-  onImport,
-  onAddCourse,
-}: CourseFiltersProps) {
+  const availClasses = availableClasses();
+
   return (
     <Card className="mb-6">
       <CardContent className="p-6">
@@ -54,14 +44,14 @@ export function CourseFilters({
                 <Input
                   placeholder="Cari mata kuliah..."
                   value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-10 w-full pl-9"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3 sm:flex">
                 <Select
                   value={selectedSemester}
-                  onValueChange={onSemesterChange}
+                  onValueChange={setSelectedSemester}
                 >
                   <SelectTrigger className="h-10 w-full sm:w-48">
                     <SelectValue placeholder="Pilih Semester" />
@@ -75,13 +65,13 @@ export function CourseFilters({
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={selectedClass} onValueChange={onClassChange}>
+                <Select value={selectedClass} onValueChange={setSelectedClass}>
                   <SelectTrigger className="h-10 w-full sm:w-40">
                     <SelectValue placeholder="Kelas" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Kelas</SelectItem>
-                    {availableClasses.map((classOption) => (
+                    {availClasses.map((classOption) => (
                       <SelectItem key={classOption} value={classOption}>
                         Kelas {classOption}
                       </SelectItem>
@@ -95,7 +85,7 @@ export function CourseFilters({
             <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
               <Button
                 variant="outline"
-                onClick={onExport}
+                onClick={handleExportAll}
                 size="sm"
                 className="h-10 w-full px-3 sm:w-auto"
               >
@@ -104,7 +94,7 @@ export function CourseFilters({
               </Button>
               <Button
                 variant="outline"
-                onClick={onImport}
+                onClick={() => setShowImportModal(true)}
                 size="sm"
                 className="h-10 w-full px-3 sm:w-auto"
               >
@@ -112,7 +102,7 @@ export function CourseFilters({
                 Import
               </Button>
               <Button
-                onClick={onAddCourse}
+                onClick={handleAddCourse}
                 className="col-span-2 h-10 w-full bg-primary px-4 sm:col-auto sm:w-auto"
                 size="sm"
               >
@@ -128,7 +118,7 @@ export function CourseFilters({
               <Switch
                 id="group-by-code"
                 checked={groupByCode}
-                onCheckedChange={onGroupByCodeChange}
+                onCheckedChange={setGroupByCode}
               />
               <Label
                 htmlFor="group-by-code"

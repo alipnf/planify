@@ -13,18 +13,11 @@ import { toast } from 'sonner';
 import { CreateCourseData } from '@/lib/types/course';
 import { formatTimeRange } from '@/lib/course-utils';
 import { CategoryBadge } from '@/components/ui/category-badge';
+import { useCoursesStore } from '@/lib/stores/courses';
 
-interface ImportCoursesModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onImport: (courses: CreateCourseData[]) => void;
-}
-
-export function ImportCoursesModal({
-  open,
-  onOpenChange,
-  onImport,
-}: ImportCoursesModalProps) {
+export function ImportCoursesModal() {
+  const { showImportModal, setShowImportModal, handleImportCourses } =
+    useCoursesStore();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewData, setPreviewData] = useState<CreateCourseData[] | null>(
@@ -211,7 +204,7 @@ export function ImportCoursesModal({
 
   const handleImport = () => {
     if (previewData && previewData.length > 0) {
-      onImport(previewData);
+      handleImportCourses(previewData);
       handleReset();
       toast.success(`${previewData.length} mata kuliah berhasil diimpor`);
     }
@@ -226,11 +219,11 @@ export function ImportCoursesModal({
 
   const handleClose = () => {
     handleReset();
-    onOpenChange(false);
+    setShowImportModal(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={showImportModal} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
