@@ -19,6 +19,7 @@ import { Textarea } from '../ui/textarea';
 import { CategoryBadge } from '../ui/category-badge';
 import { useCoursesStore } from '@/lib/stores/courses';
 import { useCreateSchedule } from '@/lib/hooks/use-create-schedule';
+import { useSettingsStore } from '@/lib/stores/settings';
 
 interface SchedulePreferences {
   targetCredits: number;
@@ -38,6 +39,7 @@ interface ScheduleOptionView {
 
 export function AIScheduler() {
   const { courses } = useCoursesStore();
+  const { savedApiKey } = useSettingsStore();
   const { handleAIEdit, handleAISave } = useCreateSchedule();
 
   const preferences: SchedulePreferences = {
@@ -70,8 +72,8 @@ export function AIScheduler() {
     setErrorMessage(null);
 
     try {
-      // Get the API key from local storage. It's okay if it's null.
-      const apiKey = localStorage.getItem('googleAiApiKey');
+      // Get the API key from settings store. It's okay if it's null.
+      const apiKey = savedApiKey;
 
       const response = await fetch('/api/generate-schedule', {
         method: 'POST',
