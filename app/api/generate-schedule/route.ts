@@ -73,9 +73,10 @@ Response Anda HARUS HANYA JSON, tanpa teks atau markup lain.`;
 
     // Return full schedule options
     return NextResponse.json({ options: modelResponse as Course[][] });
-  } catch (e) {
+  } catch (error) {
+    console.error('Detailed error in generate-schedule:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: e },
+      { error: 'Internal server error', details: (error as Error).message || 'Unknown error' },
       { status: 500 }
     );
   }
