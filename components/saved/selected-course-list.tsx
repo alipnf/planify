@@ -3,10 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatTimeRange } from '@/lib/course-utils';
 import { CategoryBadge } from '@/components/ui/category-badge';
+import { Course } from '@/lib/types/course';
 
-export function SelectedCourseList() {
+interface SelectedCourseListProps {
+  selectedCourses?: Course[];
+}
+
+export function SelectedCourseList({
+  selectedCourses: propsCourses,
+}: SelectedCourseListProps) {
   const { selectedCourses } = useSavedSchedulesStore();
-  const courses = selectedCourses();
+
+  const courses = propsCourses || selectedCourses();
 
   const totalCredits = courses.reduce((acc, course) => acc + course.credits, 0);
 
