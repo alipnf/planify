@@ -37,7 +37,7 @@ interface ScheduleOptionView {
 }
 
 export function AIScheduler() {
-  const { courses, isLoading } = useCoursesStore();
+  const { courses } = useCoursesStore();
   const { handleAIEdit, handleAISave } = useCreateSchedule();
 
   const preferences: SchedulePreferences = {
@@ -125,20 +125,6 @@ export function AIScheduler() {
     setPreviewCourses(option.courses);
     setSelectedOptionId(option.id);
   };
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="text-center py-12">
-          <div className="animate-pulse space-y-3">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   const previewConflicts = detectTimeConflicts(previewCourses);
 
