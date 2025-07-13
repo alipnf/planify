@@ -11,9 +11,11 @@ export async function middleware(req: NextRequest) {
     '/settings',
   ];
 
+  const { pathname } = req.nextUrl;
+
   // Check if current path is protected
   const isProtectedRoute = protectedRoutes.some((route) =>
-    req.nextUrl.pathname.startsWith(route)
+    pathname.startsWith(route)
   );
 
   // Create Supabase client with cookies from request
@@ -37,9 +39,13 @@ export async function middleware(req: NextRequest) {
   // Refresh session and get user
   const { data } = await supabase.auth.getUser();
 
+  if (data.user && pathname === '/') {
+    return NextResponse.redirect(new URL('/courses', req.nextUrl.origin));
+  }
+
   if (isProtectedRoute && !data.user) {
     const loginUrl = new URL('/auth/login', req.nextUrl.origin);
-    loginUrl.searchParams.set('callbackUrl', req.nextUrl.pathname);
+    loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
