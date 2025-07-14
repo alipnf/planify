@@ -1,221 +1,387 @@
 import { createClient } from '@/lib/supabase/client';
-import { Course, CreateCourseData, UpdateCourseData } from '@/lib/types/course';
+import {
+  Course,
+  CreateCourseData,
+  CourseFromSupabase,
+} from '@/lib/types/course';
 
-// Initialize Supabase client
 const supabase = createClient();
 
-// Utility function: Transform camelCase to snake_case for database
-export function transformToDbFormat(
-  data: CreateCourseData | UpdateCourseData | Partial<CreateCourseData>
-): Record<string, unknown> {
-  const result: Record<string, unknown> = { ...data };
-
-  // Transform time fields and ensure HH:MM format
-  if ('startTime' in data && data.startTime) {
-    result.start_time = data.startTime.substring(0, 5); // Ensure HH:MM format
-    delete result.startTime;
-  }
-  if ('endTime' in data && data.endTime) {
-    result.end_time = data.endTime.substring(0, 5); // Ensure HH:MM format
-    delete result.endTime;
-  }
-
-  return result;
+async function getCurrentUser() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated.');
+  return user;
 }
 
-// Utility function: Transform snake_case to camelCase for frontend
-export function transformFromDbFormat(data: Record<string, unknown>): Course {
-  const result: Record<string, unknown> = {};
-
-  // Copy all properties except time fields
-  Object.keys(data).forEach((key) => {
-    if (key !== 'start_time' && key !== 'end_time') {
-      result[key] = data[key];
-    }
-  });
-
-  // Transform time fields
-  if (data.start_time) {
-    result.startTime = data.start_time;
+function transformToCourse(data: CourseFromSupabase): Course {
+  if (!data.course_definition || !data.lecturer) {
+    console.warn('Incomplete course data received:', data);
+    return {
+      id: `${data.course_code}-${data.class_name}`,
+      code: data.course_code,
+      name: data.course_definition?.name || 'N/A',
+      lecturer: data.lecturer?.name || 'N/A',
+      credits: data.course_definition?.credits || 0,
+      category: data.course_definition?.category || 'pilihan',
+      class: data.class_name,
+      room: data.room_name,
+      day: data.day_of_week,
+      startTime: data.start_time?.substring(0, 5) || '00:00',
+      endTime: data.end_time?.substring(0, 5) || '00:00',
+      semester: data.semester,
+      user_id: data.user_id,
+      created_at: data.created_at,
+    };
   }
-  if (data.end_time) {
-    result.endTime = data.end_time;
-  }
 
-  return result as unknown as Course;
+  return {
+    id: `${data.course_code}-${data.class_name}`,
+    code: data.course_code,
+    name: data.course_definition.name,
+    lecturer: data.lecturer.name,
+    credits: data.course_definition.credits,
+    category: data.course_definition.category,
+    class: data.class_name,
+    room: data.room_name,
+    day: data.day_of_week,
+    startTime: data.start_time.substring(0, 5),
+    endTime: data.end_time.substring(0, 5),
+    semester: data.semester,
+    user_id: data.user_id,
+    created_at: data.created_at,
+  };
 }
 
-// Utility function: Get current authenticated user
-export async function getCurrentUser() {
-  try {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+// A helper function to handle upserting related data (lecturer, definition)
+async function upsertCourseDependencies(courseData: {
+  code: string;
+  name: string;
+  lecturer: string;
+  credits: number;
+  category: 'wajib' | 'pilihan';
+}) {
+  const { data: lecturer, error: lecturerError } = await supabase
+    .from('lecturers')
+    .upsert({ name: courseData.lecturer }, { onConflict: 'name' })
+    .select('id, name')
+    .single();
 
-    if (error) {
-      console.error('Error getting current user:', error);
-      return null;
-    }
-
-    return user;
-  } catch (error) {
-    console.error('Error in getCurrentUser:', error);
-    return null;
+  if (lecturerError) {
+    console.error('Error upserting lecturer:', lecturerError);
+    throw new Error(`Failed to upsert lecturer: ${lecturerError.message}`);
   }
+
+  const { data: definition, error: definitionError } = await supabase
+    .from('course_definitions')
+    .upsert(
+      {
+        code: courseData.code,
+        name: courseData.name,
+        credits: courseData.credits,
+        category: courseData.category,
+      },
+      { onConflict: 'code' }
+    )
+    .select('code, name, credits, category')
+    .single();
+
+  if (definitionError) {
+    console.error('Error upserting course definition:', definitionError);
+    throw new Error(
+      `Failed to upsert course definition: ${definitionError.message}`
+    );
+  }
+
+  return { lecturer, definition };
 }
 
-// Course service functions
 export async function getAllCourses(): Promise<Course[]> {
-  try {
-    const { data, error } = await supabase
-      .from('courses')
-      .select('*')
-      .order('semester', { ascending: true })
-      .order('code', { ascending: true })
-      .order('class', { ascending: true });
+  const user = await getCurrentUser();
+  const { data, error } = await supabase
+    .from('courses')
+    .select(
+      `
+      *,
+      course_definition:course_definitions(*),
+      lecturer:lecturers(*)
+    `
+    )
+    .eq('user_id', user.id)
+    .order('semester', { ascending: true })
+    .order('course_code', { ascending: true })
+    .order('class_name', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching courses:', error);
-      throw new Error(`Failed to fetch courses: ${error.message}`);
-    }
-
-    return (data || []).map((course) => transformFromDbFormat(course));
-  } catch (error) {
-    console.error('Error in getAllCourses:', error);
-    throw error;
+  if (error) {
+    console.error('Error fetching courses:', error);
+    throw new Error(`Failed to fetch courses: ${error.message}`);
   }
+
+  return (data || []).map(transformToCourse);
 }
 
 export async function createCourse(
   courseData: CreateCourseData
 ): Promise<Course> {
-  try {
-    const user = await getCurrentUser();
+  const user = await getCurrentUser();
 
-    if (!user) {
-      throw new Error('User not authenticated');
+  const { lecturer, definition } = await upsertCourseDependencies(courseData);
+
+  const courseInsertData = {
+    user_id: user.id,
+    course_code: definition.code,
+    lecturer_id: lecturer.id,
+    class_name: courseData.class,
+    room_name: courseData.room,
+    day_of_week: courseData.day,
+    start_time: courseData.startTime,
+    end_time: courseData.endTime,
+    semester: courseData.semester,
+  };
+
+  const { data: newCourse, error: courseError } = await supabase
+    .from('courses')
+    .insert(courseInsertData)
+    .select('*')
+    .single();
+
+  if (courseError) {
+    console.error('Error creating course:', courseError);
+    if (courseError.code === '23505') {
+      // Unique constraint violation
+      throw new Error(
+        `Mata kuliah dengan kode ${courseData.code} dan kelas ${courseData.class} sudah ada.`
+      );
     }
-
-    // Transform camelCase to snake_case for database
-    const dbData = transformToDbFormat(courseData);
-
-    const { data, error } = await supabase
-      .from('courses')
-      .insert({
-        ...dbData,
-        user_id: user.id,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating course:', error);
-      throw new Error(`Failed to create course: ${error.message}`);
-    }
-
-    return transformFromDbFormat(data);
-  } catch (error) {
-    console.error('Error in createCourse:', error);
-    throw error;
+    throw new Error(`Failed to create course: ${courseError.message}`);
   }
+
+  return transformToCourse({
+    ...newCourse,
+    course_definition: definition,
+    lecturer: lecturer,
+  });
 }
 
 export async function updateCourse(
-  courseData: UpdateCourseData
+  courseIdentifier: { course_code: string; class_name: string },
+  courseData: Partial<CreateCourseData>
 ): Promise<Course> {
-  try {
-    const { id, ...updateData } = courseData;
+  const user = await getCurrentUser();
 
-    // Transform camelCase to snake_case for database
-    const dbUpdateData = transformToDbFormat(updateData);
+  const fullCourseData = {
+    // Fill with old data first
+    code: courseIdentifier.course_code,
+    name: '', // Will be fetched or provided
+    lecturer: '', // Will be fetched or provided
+    credits: 0, // Will be fetched or provided
+    category: 'pilihan' as const, // Will be fetched or provided
+    class: courseIdentifier.class_name,
+    ...courseData, // Overwrite with new data
+  };
 
-    const { data, error } = await supabase
+  // If name, lecturer, etc. are not in courseData, we need to fetch them
+  if (
+    !fullCourseData.name ||
+    !fullCourseData.lecturer ||
+    !fullCourseData.credits
+  ) {
+    const { data: oldCourse, error: fetchError } = await supabase
       .from('courses')
-      .update(dbUpdateData)
-      .eq('id', id)
-      .select()
+      .select(
+        '*, course_definition:course_definitions(*), lecturer:lecturers(*)'
+      )
+      .match(courseIdentifier)
       .single();
 
-    if (error) {
-      console.error('Error updating course:', error);
-      throw new Error(`Failed to update course: ${error.message}`);
+    if (fetchError || !oldCourse) {
+      throw new Error('Could not find the original course to update.');
     }
+    fullCourseData.name =
+      fullCourseData.name || oldCourse.course_definition?.name || '';
+    fullCourseData.lecturer =
+      fullCourseData.lecturer || oldCourse.lecturer?.name || '';
+    fullCourseData.credits =
+      fullCourseData.credits || oldCourse.course_definition?.credits || 0;
+    fullCourseData.category =
+      courseData.category || oldCourse.course_definition?.category || 'pilihan';
+  }
 
-    return transformFromDbFormat(data);
-  } catch (error) {
-    console.error('Error in updateCourse:', error);
-    throw error;
+  const { lecturer, definition } =
+    await upsertCourseDependencies(fullCourseData);
+
+  const courseUpdateData = {
+    user_id: user.id,
+    course_code: definition.code,
+    lecturer_id: lecturer.id,
+    class_name: fullCourseData.class,
+    room_name: fullCourseData.room,
+    day_of_week: fullCourseData.day,
+    start_time: fullCourseData.startTime,
+    end_time: fullCourseData.endTime,
+    semester: fullCourseData.semester,
+  };
+
+  const { data: updatedCourse, error: courseError } = await supabase
+    .from('courses')
+    .update(courseUpdateData)
+    .match({
+      user_id: user.id,
+      course_code: courseIdentifier.course_code,
+      class_name: courseIdentifier.class_name,
+    })
+    .select('*')
+    .single();
+
+  if (courseError) {
+    console.error('Error updating course:', courseError);
+    if (courseError.code === '23505') {
+      // Unique constraint violation
+      throw new Error(
+        `Mata kuliah dengan kode ${fullCourseData.code} dan kelas ${fullCourseData.class} sudah ada.`
+      );
+    }
+    throw new Error(`Failed to update course: ${courseError.message}`);
+  }
+
+  return transformToCourse({
+    ...updatedCourse,
+    course_definition: definition,
+    lecturer: lecturer,
+  });
+}
+
+export async function deleteCourse(courseIdentifier: {
+  course_code: string;
+  class_name: string;
+}): Promise<void> {
+  const user = await getCurrentUser();
+  const { error } = await supabase.from('courses').delete().match({
+    user_id: user.id,
+    course_code: courseIdentifier.course_code,
+    class_name: courseIdentifier.class_name,
+  });
+
+  if (error) {
+    console.error('Error deleting course:', error);
+    throw new Error(`Failed to delete course: ${error.message}`);
   }
 }
 
-export async function deleteCourse(courseId: string): Promise<void> {
-  try {
-    const { error } = await supabase
-      .from('courses')
-      .delete()
-      .eq('id', courseId);
+export async function deleteCourses(
+  courseIdentifiers: { course_code: string; class_name: string }[]
+): Promise<void> {
+  const user = await getCurrentUser();
+  // We have to delete one by one because Supabase doesn't easily support
+  // bulk deletes on composite primary keys without using an RPC.
+  for (const identifier of courseIdentifiers) {
+    const { error } = await supabase.from('courses').delete().match({
+      user_id: user.id,
+      course_code: identifier.course_code,
+      class_name: identifier.class_name,
+    });
 
     if (error) {
-      console.error('Error deleting course:', error);
-      throw new Error(`Failed to delete course: ${error.message}`);
+      console.error(
+        `Error deleting course ${identifier.course_code}-${identifier.class_name}:`,
+        error
+      );
+      // We'll continue trying to delete others even if one fails.
     }
-  } catch (error) {
-    console.error('Error in deleteCourse:', error);
-    throw error;
-  }
-}
-
-export async function deleteCourses(courseIds: string[]): Promise<void> {
-  try {
-    const { error } = await supabase
-      .from('courses')
-      .delete()
-      .in('id', courseIds);
-
-    if (error) {
-      console.error('Error deleting courses:', error);
-      throw new Error(`Failed to delete courses: ${error.message}`);
-    }
-  } catch (error) {
-    console.error('Error in deleteCourses:', error);
-    throw error;
   }
 }
 
 export async function importCourses(
   courses: CreateCourseData[]
 ): Promise<Course[]> {
-  try {
-    const user = await getCurrentUser();
+  const user = await getCurrentUser();
 
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
+  // 1. Upsert all lecturers in one go
+  const lecturerNames = [...new Set(courses.map((c) => c.lecturer))];
+  const { data: lecturers, error: lecturerError } = await supabase
+    .from('lecturers')
+    .upsert(
+      lecturerNames.map((name) => ({ name })),
+      { onConflict: 'name' }
+    )
+    .select('id, name');
 
-    const coursesWithUserId = courses.map((course) => ({
-      ...transformToDbFormat(course),
-      user_id: user.id,
-    }));
-
-    const { data, error } = await supabase
-      .from('courses')
-      .insert(coursesWithUserId)
-      .select();
-
-    if (error) {
-      console.error('Error importing courses:', error);
-      throw new Error(`Failed to import courses: ${error.message}`);
-    }
-
-    return (data || []).map((course) => transformFromDbFormat(course));
-  } catch (error) {
-    console.error('Error in importCourses:', error);
-    throw error;
+  if (lecturerError) {
+    console.error('Error bulk upserting lecturers:', lecturerError);
+    throw new Error('Failed to import lecturers');
   }
+  const lecturerMap = new Map(lecturers.map((l) => [l.name, l.id]));
+
+  // 2. Upsert all course definitions in one go
+  const definitionMap = new Map<string, CreateCourseData>();
+  courses.forEach((c) => {
+    // In case of duplicate codes, the last one wins. This is acceptable.
+    definitionMap.set(c.code, c);
+  });
+  const definitionsToUpsert = [...definitionMap.values()].map((c) => ({
+    code: c.code,
+    name: c.name,
+    credits: c.credits,
+    category: c.category,
+  }));
+
+  const { data: definitions, error: definitionError } = await supabase
+    .from('course_definitions')
+    .upsert(definitionsToUpsert, { onConflict: 'code' })
+    .select('code, name, credits, category');
+
+  if (definitionError) {
+    console.error('Error bulk upserting definitions:', definitionError);
+    throw new Error('Failed to import course definitions');
+  }
+
+  const definitionResultMap = new Map(definitions.map((d) => [d.code, d]));
+
+  // 3. Prepare course instances for insertion
+  const coursesToInsert = courses.map((course) => {
+    const lecturerId = lecturerMap.get(course.lecturer);
+    if (!lecturerId) {
+      // This should not happen if lecturer upsert was successful
+      throw new Error(`Could not find lecturer ID for ${course.lecturer}`);
+    }
+    return {
+      user_id: user.id,
+      course_code: course.code,
+      lecturer_id: lecturerId,
+      class_name: course.class,
+      room_name: course.room,
+      day_of_week: course.day,
+      start_time: course.startTime,
+      end_time: course.endTime,
+      semester: course.semester,
+    };
+  });
+
+  // 4. Insert all course instances in one go
+  const { data: newCourses, error: courseError } = await supabase
+    .from('courses')
+    .insert(coursesToInsert)
+    .select('*');
+
+  if (courseError) {
+    console.error('Error bulk inserting courses:', courseError);
+    if (courseError.code === '23505') {
+      throw new Error('Gagal mengimpor: terdapat mata kuliah duplikat.');
+    }
+    throw new Error('Failed to import courses');
+  }
+
+  // 5. Transform and return the created courses
+  return newCourses.map((course) =>
+    transformToCourse({
+      ...course,
+      lecturer: lecturers.find((l) => l.id === course.lecturer_id) || null,
+      course_definition: definitionResultMap.get(course.course_code) || null,
+    })
+  );
 }
 
-// Legacy object-style export for backward compatibility
 export const coursesService = {
   getAllCourses,
   createCourse,

@@ -8,39 +8,29 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Course } from '@/lib/types/course';
 import { getFullCourseCode } from '@/lib/course-utils';
+import { useCoursesStore } from '@/lib/stores/courses';
 
-interface CourseDeleteDialogsProps {
-  // Single delete
-  showDeleteDialog: boolean;
-  courseToDelete: Course | null;
-  onDeleteDialogChange: (open: boolean) => void;
-  onConfirmDelete: () => Promise<void>;
+export function CourseDeleteDialogs() {
+  const {
+    showDeleteDialog,
+    setShowDeleteDialog,
+    courseToDelete,
+    handleConfirmDelete,
+    showBulkDeleteDialog,
+    setShowBulkDeleteDialog,
+    handleConfirmBulkDelete,
+    selectedCourseNames,
+    selectedCourses,
+  } = useCoursesStore();
 
-  // Bulk delete
-  showBulkDeleteDialog: boolean;
-  selectedCourseNames: string[];
-  selectedCount: number;
-  onBulkDeleteDialogChange: (open: boolean) => void;
-  onConfirmBulkDelete: () => Promise<void>;
-}
+  const selectedCount = selectedCourses.length;
+  const selCourseNames = selectedCourseNames();
 
-export function CourseDeleteDialogs({
-  showDeleteDialog,
-  courseToDelete,
-  onDeleteDialogChange,
-  onConfirmDelete,
-  showBulkDeleteDialog,
-  selectedCourseNames,
-  selectedCount,
-  onBulkDeleteDialogChange,
-  onConfirmBulkDelete,
-}: CourseDeleteDialogsProps) {
   return (
     <>
       {/* Single Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={onDeleteDialogChange}>
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Konfirmasi Hapus Mata Kuliah</AlertDialogTitle>
@@ -56,7 +46,7 @@ export function CourseDeleteDialogs({
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
-              onClick={onConfirmDelete}
+              onClick={handleConfirmDelete}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
             >
               Hapus Mata Kuliah
@@ -68,7 +58,7 @@ export function CourseDeleteDialogs({
       {/* Bulk Delete Confirmation Dialog */}
       <AlertDialog
         open={showBulkDeleteDialog}
-        onOpenChange={onBulkDeleteDialogChange}
+        onOpenChange={setShowBulkDeleteDialog}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -76,41 +66,43 @@ export function CourseDeleteDialogs({
             <AlertDialogDescription>
               Apakah Anda yakin ingin menghapus {selectedCount} mata kuliah yang
               dipilih?
-              {selectedCourseNames.length <= 3 ? (
-                <div className="mt-2 space-y-1">
-                  {selectedCourseNames.map((name, index) => (
-                    <div
+              {selCourseNames.length <= 3 ? (
+                <span className="mt-2 block space-y-1">
+                  {selCourseNames.map((name: string, index: number) => (
+                    <span
                       key={index}
-                      className="text-sm font-medium text-gray-900"
+                      className="block text-sm font-medium text-gray-900"
                     >
                       • {name}
-                    </div>
+                    </span>
                   ))}
-                </div>
+                </span>
               ) : (
-                <div className="mt-2 space-y-1">
-                  {selectedCourseNames.slice(0, 3).map((name, index) => (
-                    <div
-                      key={index}
-                      className="text-sm font-medium text-gray-900"
-                    >
-                      • {name}
-                    </div>
-                  ))}
-                  <div className="text-sm text-gray-600">
-                    dan {selectedCourseNames.length - 3} mata kuliah lainnya...
-                  </div>
-                </div>
+                <span className="mt-2 block space-y-1">
+                  {selCourseNames
+                    .slice(0, 3)
+                    .map((name: string, index: number) => (
+                      <span
+                        key={index}
+                        className="block text-sm font-medium text-gray-900"
+                      >
+                        • {name}
+                      </span>
+                    ))}
+                  <span className="block text-sm text-gray-600">
+                    dan {selCourseNames.length - 3} mata kuliah lainnya...
+                  </span>
+                </span>
               )}
-              <div className="mt-2 text-sm text-red-600">
+              <span className="mt-2 block text-sm text-red-600">
                 Tindakan ini tidak dapat dibatalkan.
-              </div>
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
-              onClick={onConfirmBulkDelete}
+              onClick={handleConfirmBulkDelete}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
             >
               Hapus {selectedCount} Mata Kuliah

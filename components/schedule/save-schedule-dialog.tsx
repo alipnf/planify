@@ -11,12 +11,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Save } from 'lucide-react';
+import { useCreateSchedule } from '@/lib/hooks/use-create-schedule';
 
 interface SaveScheduleDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (scheduleName: string) => Promise<void>;
-  isSaving: boolean;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onSave?: (scheduleName: string) => Promise<void>;
+  isSaving?: boolean;
   defaultScheduleName?: string;
 }
 
@@ -24,28 +25,40 @@ export function SaveScheduleDialog({
   isOpen,
   onClose,
   onSave,
-  isSaving,
-  defaultScheduleName = '',
-}: SaveScheduleDialogProps) {
-  const [scheduleName, setScheduleName] = useState(defaultScheduleName);
+  isSaving: externalIsSaving,
+  defaultScheduleName,
+}: SaveScheduleDialogProps = {}) {
+  const createScheduleHook = useCreateSchedule();
+  const [scheduleName, setScheduleName] = useState('');
 
-  useEffect(() => {
-    setScheduleName(defaultScheduleName);
-  }, [defaultScheduleName, isOpen]);
-
-  const handleSave = async () => {
-    if (scheduleName.trim()) {
-      await onSave(scheduleName.trim());
+  // Use external props if provided, otherwise use internal hook
+  const isDialogOpen = isOpen !== undefined ? isOpen : createScheduleHook.isDialogOpen;
+  const isSaving = externalIsSaving !== undefined ? externalIsSaving : createScheduleHook.isSaving;
+  const handleConfirmSave = onSave || createScheduleHook.handleConfirmSave;
+  
+  const handleDialogClose = () => {
+    if (isSaving) return;
+    if (onClose) {
+      onClose();
+    } else {
+      createScheduleHook.setIsDialogOpen(false);
     }
   };
 
-  const handleClose = () => {
-    if (isSaving) return;
-    onClose();
+  useEffect(() => {
+    if (isDialogOpen) {
+      setScheduleName(defaultScheduleName || '');
+    }
+  }, [isDialogOpen, defaultScheduleName]);
+
+  const handleSave = async () => {
+    if (scheduleName.trim()) {
+      await handleConfirmSave(scheduleName.trim());
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
@@ -68,7 +81,7 @@ export function SaveScheduleDialog({
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isSaving}>
+          <Button variant="outline" onClick={handleDialogClose} disabled={isSaving}>
             Batal
           </Button>
           <Button

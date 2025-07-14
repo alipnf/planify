@@ -11,45 +11,16 @@ import { useCourses } from '@/lib/hooks/use-courses';
 
 export default function CoursesPage() {
   const {
-    searchQuery,
-    selectedSemester,
-    selectedClass,
-    groupByCode,
-    availableClasses,
-    setSearchQuery,
-    setSelectedSemester,
-    setSelectedClass,
-    setGroupByCode,
-    handleExportAll,
     setShowImportModal,
     handleAddCourse,
     isLoading,
     filteredCourses,
     hasFilters,
-    selectedCourses,
-    handleSelectAll,
-    handleSelectCourse,
-    handleEditCourse,
-    handleDeleteCourseClick,
-    handleBulkDeleteClick,
-    allSelected,
-    someSelected,
-    groupedCourses,
-    showCourseModal,
-    setShowCourseModal,
-    editingCourse,
-    handleSaveCourse,
-    showImportModal,
-    handleImportCourses,
-    showDeleteDialog,
-    courseToDelete,
-    setShowDeleteDialog,
-    handleConfirmDelete,
-    showBulkDeleteDialog,
-    selectedCourseNames,
-    setShowBulkDeleteDialog,
-    handleConfirmBulkDelete,
   } = useCourses();
+
+  // Call computed functions
+  const coursesList = filteredCourses();
+  const hasFil = hasFilters();
 
   return (
     <>
@@ -66,74 +37,30 @@ export default function CoursesPage() {
           </div>
 
           {/* Filters */}
-          <CourseFilters
-            searchQuery={searchQuery}
-            selectedSemester={selectedSemester}
-            selectedClass={selectedClass}
-            groupByCode={groupByCode}
-            availableClasses={availableClasses}
-            onSearchChange={setSearchQuery}
-            onSemesterChange={setSelectedSemester}
-            onClassChange={setSelectedClass}
-            onGroupByCodeChange={setGroupByCode}
-            onExport={handleExportAll}
-            onImport={() => setShowImportModal(true)}
-            onAddCourse={handleAddCourse}
-          />
+          <CourseFilters />
 
           {/* Course Table, Loading State, or Empty State */}
           {isLoading ? (
             <CourseTableSkeleton rows={8} />
-          ) : filteredCourses.length === 0 ? (
+          ) : coursesList.length === 0 ? (
             <CourseEmptyState
-              hasFilters={hasFilters}
+              hasFilters={hasFil}
               onAddCourse={handleAddCourse}
               onImport={() => setShowImportModal(true)}
             />
           ) : (
-            <CourseTable
-              courses={filteredCourses}
-              selectedCourses={selectedCourses}
-              onSelectAll={handleSelectAll}
-              onSelectCourse={handleSelectCourse}
-              onEditCourse={handleEditCourse}
-              onDeleteCourse={handleDeleteCourseClick}
-              onBulkDelete={handleBulkDeleteClick}
-              allSelected={allSelected}
-              someSelected={someSelected}
-              groupByCode={groupByCode}
-              groupedCourses={groupedCourses}
-            />
+            <CourseTable />
           )}
         </div>
       </div>
 
       {/* Modals */}
-      <CourseModal
-        open={showCourseModal}
-        onOpenChange={setShowCourseModal}
-        course={editingCourse}
-        onSave={handleSaveCourse}
-      />
+      <CourseModal />
 
-      <ImportCoursesModal
-        open={showImportModal}
-        onOpenChange={setShowImportModal}
-        onImport={handleImportCourses}
-      />
+      <ImportCoursesModal />
 
       {/* Delete Dialogs */}
-      <CourseDeleteDialogs
-        showDeleteDialog={showDeleteDialog}
-        courseToDelete={courseToDelete}
-        onDeleteDialogChange={setShowDeleteDialog}
-        onConfirmDelete={handleConfirmDelete}
-        showBulkDeleteDialog={showBulkDeleteDialog}
-        selectedCourseNames={selectedCourseNames}
-        selectedCount={selectedCourses.length}
-        onBulkDeleteDialogChange={setShowBulkDeleteDialog}
-        onConfirmBulkDelete={handleConfirmBulkDelete}
-      />
+      <CourseDeleteDialogs />
     </>
   );
 }

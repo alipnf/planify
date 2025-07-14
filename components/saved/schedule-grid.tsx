@@ -1,4 +1,4 @@
-import type { SavedSchedule } from '@/lib/services/schedules';
+import { useSavedSchedulesStore } from '@/lib/stores/saved';
 import {
   Card,
   CardHeader,
@@ -7,16 +7,6 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScheduleCard } from './schedule-card';
-
-interface ScheduleGridProps {
-  schedules: SavedSchedule[];
-  isLoading: boolean;
-  activeScheduleId: string | null;
-  onDelete: (schedule: SavedSchedule) => void;
-  onPreview: (schedule: SavedSchedule) => void;
-  onExport: (schedule: SavedSchedule) => void;
-  onShare: (schedule: SavedSchedule) => void;
-}
 
 function ScheduleSkeleton() {
   return (
@@ -36,15 +26,9 @@ function ScheduleSkeleton() {
   );
 }
 
-export function ScheduleGrid({
-  schedules,
-  isLoading,
-  activeScheduleId,
-  onDelete,
-  onPreview,
-  onExport,
-  onShare,
-}: ScheduleGridProps) {
+export function ScheduleGrid() {
+  const { schedules, isLoading, activeSchedule } = useSavedSchedulesStore();
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -61,11 +45,7 @@ export function ScheduleGrid({
         <ScheduleCard
           key={schedule.id}
           schedule={schedule}
-          isActive={schedule.id === activeScheduleId}
-          onDelete={onDelete}
-          onPreview={onPreview}
-          onExport={onExport}
-          onShare={onShare}
+          isActive={schedule.id === activeSchedule?.id}
         />
       ))}
     </div>

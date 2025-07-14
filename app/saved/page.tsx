@@ -1,8 +1,9 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, X, Download } from 'lucide-react';
+import { AlertCircle, X, Download, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,10 +23,11 @@ import { SelectedCourseList } from '@/components/saved/selected-course-list';
 import { useSavedSchedules } from '@/lib/hooks/use-saved-schedules';
 
 export default function SavedSchedulesPage() {
+  const previewRef = useRef<HTMLDivElement>(null);
   const {
-    previewRef,
     schedules,
     isLoading,
+    isDeleting,
     error,
     selectedCourses,
     conflicts,
@@ -33,19 +35,21 @@ export default function SavedSchedulesPage() {
     setShowDeleteAlert,
     scheduleToDelete,
     activeSchedule,
-    showImportDialog,
     setShowImportDialog,
-    showShareDialog,
-    setShowShareDialog,
-    shareUrl,
-    handleDeleteClick,
     handleConfirmDelete,
-    handlePreviewClick,
     closePreview,
-    handleExport,
-    handleShareClick,
-    handleImport,
   } = useSavedSchedules();
+
+  useEffect(() => {
+    if (activeSchedule) {
+      setTimeout(() => {
+        previewRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }, 100);
+    }
+  }, [activeSchedule]);
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
@@ -73,15 +77,7 @@ export default function SavedSchedulesPage() {
         ) : !isLoading && schedules.length === 0 ? (
           <EmptyState />
         ) : (
-          <ScheduleGrid
-            schedules={schedules}
-            isLoading={isLoading}
-            activeScheduleId={activeSchedule?.id || null}
-            onDelete={handleDeleteClick}
-            onPreview={handlePreviewClick}
-            onExport={handleExport}
-            onShare={handleShareClick}
-          />
+          <ScheduleGrid />
         )}
 
         {activeSchedule && (
@@ -98,14 +94,12 @@ export default function SavedSchedulesPage() {
               <CardContent>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div className="lg:col-span-1">
-                    <SelectedCourseList
-                      selectedCourses={selectedCourses || []}
-                    />
+                    <SelectedCourseList />
                   </div>
                   <div className="lg:col-span-2">
                     <WeeklySchedule
-                      courses={selectedCourses || []}
-                      conflicts={conflicts}
+                      courses={selectedCourses() || []}
+                      conflicts={conflicts()}
                       showActions={false}
                     />
                   </div>
@@ -130,24 +124,23 @@ export default function SavedSchedulesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete}>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmDelete();
+              }}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <ImportScheduleDialog
-        open={showImportDialog}
-        onOpenChange={setShowImportDialog}
-        onImport={handleImport}
-      />
-
-      <ShareDialog
-        open={showShareDialog}
-        onOpenChange={setShowShareDialog}
-        shareUrl={shareUrl}
-      />
+      <ImportScheduleDialog />
+      <ShareDialog />
     </div>
   );
 }

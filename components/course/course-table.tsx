@@ -15,44 +15,29 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Course } from '@/lib/types/course';
 import { getFullCourseCode, formatTimeRange } from '@/lib/course-utils';
 import { CategoryBadge } from '@/components/ui/category-badge';
+import { useCoursesStore } from '@/lib/stores/courses';
 
-interface CourseTableProps {
-  courses: Course[];
-  selectedCourses: string[];
-  onSelectAll: (checked: boolean) => void;
-  onSelectCourse: (courseId: string, checked: boolean) => void;
-  onEditCourse: (course: Course) => void;
-  onDeleteCourse: (course: Course) => void;
-  onBulkDelete: () => void;
-  allSelected: boolean;
-  someSelected: boolean;
-  groupByCode?: boolean;
-  groupedCourses?: Array<{
-    code: string;
-    courses: Course[];
-    totalClasses: number;
-  }> | null;
-}
+export function CourseTable() {
+  const {
+    selectedCourses,
+    handleSelectAll,
+    handleSelectCourse,
+    handleEditCourse,
+    handleDeleteCourseClick,
+    handleBulkDeleteClick,
+    allSelected,
+    someSelected,
+    groupByCode,
+    filteredCourses,
+    groupedCourses,
+  } = useCoursesStore();
 
-export function CourseTable({
-  courses,
-  selectedCourses,
-  onSelectAll,
-  onSelectCourse,
-  onEditCourse,
-  onDeleteCourse,
-  onBulkDelete,
-  allSelected,
-  someSelected,
-  groupByCode = false,
-  groupedCourses = null,
-}: CourseTableProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Auto-expand all groups when grouping is first enabled
   React.useEffect(() => {
-    if (groupByCode && groupedCourses) {
-      const allCodes = new Set(groupedCourses.map((group) => group.code));
+    if (groupByCode && groupedCourses()) {
+      const allCodes = new Set(groupedCourses()!.map((group) => group.code));
       setExpandedGroups(allCodes);
     } else {
       setExpandedGroups(new Set());
@@ -69,7 +54,10 @@ export function CourseTable({
     setExpandedGroups(newExpanded);
   };
 
-  const displayCourses = groupByCode && groupedCourses ? groupedCourses : null;
+  const displayCourses = groupByCode ? groupedCourses() : null;
+  const courseList = filteredCourses();
+  const allSel = allSelected();
+  const someSel = someSelected();
 
   return (
     <Card>
@@ -80,7 +68,7 @@ export function CourseTable({
             {selectedCourses.length > 0 && (
               <Button
                 variant="destructive"
-                onClick={onBulkDelete}
+                onClick={handleBulkDeleteClick}
                 size="sm"
                 className="h-8 px-3"
               >
@@ -89,9 +77,9 @@ export function CourseTable({
               </Button>
             )}
             <Badge variant="secondary">
-              {groupedCourses
-                ? `${courses.length} kelas dalam ${groupedCourses.length} mata kuliah`
-                : `${courses.length} kelas dalam ${new Set(courses.map((c) => c.code)).size} mata kuliah`}
+              {displayCourses
+                ? `${courseList.length} kelas dalam ${displayCourses.length} mata kuliah`
+                : `${courseList.length} kelas dalam ${new Set(courseList.map((c: Course) => c.code)).size} mata kuliah`}
             </Badge>
           </div>
         </CardTitle>
@@ -103,18 +91,18 @@ export function CourseTable({
               <TableRow>
                 <TableHead className="w-12">
                   <Checkbox
-                    checked={allSelected}
+                    checked={allSel}
                     ref={(el) => {
                       if (el) {
                         const input = el.querySelector(
                           'input[type="checkbox"]'
                         ) as HTMLInputElement;
                         if (input) {
-                          input.indeterminate = someSelected;
+                          input.indeterminate = someSel;
                         }
                       }
                     }}
-                    onCheckedChange={onSelectAll}
+                    onCheckedChange={handleSelectAll}
                   />
                 </TableHead>
                 {groupByCode && displayCourses ? (
@@ -187,7 +175,10 @@ export function CourseTable({
                               <Checkbox
                                 checked={selectedCourses.includes(course.id)}
                                 onCheckedChange={(checked) =>
-                                  onSelectCourse(course.id, checked as boolean)
+                                  handleSelectCourse(
+                                    course.id,
+                                    checked as boolean
+                                  )
                                 }
                               />
                             </TableCell>
@@ -230,7 +221,7 @@ export function CourseTable({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => onEditCourse(course)}
+                                  onClick={() => handleEditCourse(course)}
                                   aria-label={`Edit mata kuliah ${getFullCourseCode(course)}`}
                                 >
                                   <Edit className="h-4 w-4" />
@@ -238,7 +229,9 @@ export function CourseTable({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => onDeleteCourse(course)}
+                                  onClick={() =>
+                                    handleDeleteCourseClick(course)
+                                  }
                                   aria-label={`Hapus mata kuliah ${getFullCourseCode(course)}`}
                                 >
                                   <Trash2 className="h-4 w-4 text-red-500" />
@@ -250,7 +243,7 @@ export function CourseTable({
                     </React.Fragment>
                   ))
                 : // Regular display
-                  courses.map((course) => (
+                  courseList.map((course) => (
                     <TableRow
                       key={course.id}
                       className={
@@ -261,7 +254,7 @@ export function CourseTable({
                         <Checkbox
                           checked={selectedCourses.includes(course.id)}
                           onCheckedChange={(checked) =>
-                            onSelectCourse(course.id, checked as boolean)
+                            handleSelectCourse(course.id, checked as boolean)
                           }
                         />
                       </TableCell>
@@ -298,7 +291,7 @@ export function CourseTable({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => onEditCourse(course)}
+                            onClick={() => handleEditCourse(course)}
                             aria-label={`Edit mata kuliah ${getFullCourseCode(course)}`}
                           >
                             <Edit className="h-4 w-4" />
@@ -306,7 +299,7 @@ export function CourseTable({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => onDeleteCourse(course)}
+                            onClick={() => handleDeleteCourseClick(course)}
                             aria-label={`Hapus mata kuliah ${getFullCourseCode(course)}`}
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />

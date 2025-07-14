@@ -9,33 +9,7 @@ import { SaveScheduleDialog } from '@/components/schedule/save-schedule-dialog';
 import { useCreateSchedule } from '@/lib/hooks/use-create-schedule';
 
 export default function CreateSchedulePage() {
-  const {
-    activeTab,
-    setActiveTab,
-    isDialogOpen,
-    setIsDialogOpen,
-    isSaving,
-    courses,
-    isLoading,
-    selectedCourses,
-    searchQuery,
-    filterSemester,
-    filterClass,
-    groupByCode,
-    conflicts,
-    stats,
-    filteredCourses,
-    toggleCourse,
-    clearAllSelections,
-    setSearchQuery,
-    setFilterSemester,
-    setFilterClass,
-    setGroupByCode,
-    handleAIEdit,
-    handleAISave,
-    handleSaveSchedule,
-    handleConfirmSave,
-  } = useCreateSchedule();
+  const { activeTab, setActiveTab } = useCreateSchedule();
 
   return (
     <>
@@ -66,49 +40,19 @@ export default function CreateSchedulePage() {
           <TabsContent value="manual" className="space-y-6">
             <div className="flex flex-col space-y-6">
               <div className="lg:col-span-1">
-                <CourseSelectionPanel
-                  courses={filteredCourses}
-                  selectedCourses={selectedCourses}
-                  onCourseToggle={toggleCourse}
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  filterSemester={filterSemester}
-                  onFilterChange={setFilterSemester}
-                  filterClass={filterClass}
-                  onClassChange={setFilterClass}
-                  groupByCode={groupByCode}
-                  onGroupByCodeChange={setGroupByCode}
-                  conflicts={conflicts}
-                  stats={stats}
-                  isLoading={isLoading}
-                />
+                <CourseSelectionPanel />
               </div>
 
-              <WeeklySchedule
-                courses={selectedCourses}
-                conflicts={conflicts}
-                onResetSchedule={clearAllSelections}
-                onSaveSchedule={handleSaveSchedule}
-              />
+              <WeeklySchedule />
             </div>
           </TabsContent>
 
           <TabsContent value="ai" className="space-y-6">
-            <AIScheduler
-              courses={courses}
-              onEdit={handleAIEdit}
-              onSave={handleAISave}
-              isLoading={isLoading}
-            />
+            <AIScheduler />
           </TabsContent>
         </Tabs>
       </div>
-      <SaveScheduleDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        onSave={handleConfirmSave}
-        isSaving={isSaving}
-      />
+      <SaveScheduleDialog />
     </>
   );
 }

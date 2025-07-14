@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMessage } from '@/lib/hooks/use-message';
 import { useUser } from '@/lib/hooks/use-auth';
-import { SavedSchedule, saveSchedule } from '@/lib/services/schedules';
+import { SavedSchedule } from '@/lib/types/schedule';
+import { saveSchedule } from '@/lib/services/schedules';
 
 export function useSharePage(schedule: SavedSchedule) {
   const { user, loading } = useUser();
@@ -15,7 +16,7 @@ export function useSharePage(schedule: SavedSchedule) {
 
   const handleSaveClick = () => {
     if (!user) {
-      router.push(`/auth/login?callbackUrl=/share/${schedule.share_id}`);
+      router.push(`/auth/login?callbackUrl=/share/${schedule.id}`);
     } else {
       setShowSaveDialog(true);
     }

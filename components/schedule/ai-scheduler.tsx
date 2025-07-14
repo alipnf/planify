@@ -17,6 +17,9 @@ import { formatTimeRange } from '@/lib/course-utils';
 import { WeeklySchedule } from './weekly-schedule';
 import { Textarea } from '../ui/textarea';
 import { CategoryBadge } from '../ui/category-badge';
+import { useCoursesStore } from '@/lib/stores/courses';
+import { useCreateSchedule } from '@/lib/hooks/use-create-schedule';
+import { useSettingsStore } from '@/lib/stores/settings';
 
 interface SchedulePreferences {
   targetCredits: number;
@@ -34,20 +37,11 @@ interface ScheduleOptionView {
   totalCredits: number;
 }
 
-export interface AISchedulerProps {
-  courses: Course[];
-  onEdit: (selectedCourses: Course[]) => void;
-  onSave: (selectedCourses: Course[]) => void;
-  isLoading?: boolean;
-  hidePrompt?: boolean;
-}
+export function AIScheduler() {
+  const { courses } = useCoursesStore();
+  const { savedApiKey } = useSettingsStore();
+  const { handleAIEdit, handleAISave } = useCreateSchedule();
 
-export function AIScheduler({
-  courses,
-  onEdit,
-  onSave,
-  isLoading = false,
-}: AISchedulerProps) {
   const preferences: SchedulePreferences = {
     targetCredits: 20,
     maxDailyCredits: 8,
@@ -78,8 +72,8 @@ export function AIScheduler({
     setErrorMessage(null);
 
     try {
-      // Get the API key from local storage. It's okay if it's null.
-      const apiKey = localStorage.getItem('googleAiApiKey');
+      // Get the API key from settings store. It's okay if it's null.
+      const apiKey = savedApiKey;
 
       const response = await fetch('/api/generate-schedule', {
         method: 'POST',
@@ -133,20 +127,6 @@ export function AIScheduler({
     setPreviewCourses(option.courses);
     setSelectedOptionId(option.id);
   };
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="text-center py-12">
-          <div className="animate-pulse space-y-3">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   const previewConflicts = detectTimeConflicts(previewCourses);
 
@@ -330,14 +310,14 @@ export function AIScheduler({
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={() => onEdit(option.courses)}
+                        onClick={() => handleAIEdit(option.courses)}
                         className="flex-1"
                       >
                         <Wand2 className="mr-2 h-4 w-4" />
                         Edit
                       </Button>
                       <Button
-                        onClick={() => onSave(option.courses)}
+                        onClick={() => handleAISave(option.courses)}
                         className="flex-1"
                       >
                         <Save className="mr-2 h-4 w-4" />

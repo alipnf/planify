@@ -12,19 +12,13 @@ import { Label } from '@/components/ui/label';
 import { Upload, FileText, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Course } from '@/lib/types/course';
+import { useSavedSchedulesStore } from '@/lib/stores/saved';
 import { z } from 'zod';
 
-interface ImportScheduleDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onImport: (scheduleName: string, courses: Course[]) => Promise<void>;
-}
+export function ImportScheduleDialog() {
+  const { showImportDialog, setShowImportDialog, handleImport } =
+    useSavedSchedulesStore();
 
-export function ImportScheduleDialog({
-  open,
-  onOpenChange,
-  onImport,
-}: ImportScheduleDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewData, setPreviewData] = useState<Course[] | null>(null);
@@ -119,11 +113,11 @@ export function ImportScheduleDialog({
     }
   };
 
-  const handleImport = async () => {
+  const handleImportClick = async () => {
     if (previewData && previewData.length > 0 && scheduleName.trim()) {
       setIsImporting(true);
       try {
-        await onImport(scheduleName.trim(), previewData);
+        await handleImport(scheduleName.trim(), previewData);
         // Toast dan penutupan modal ditangani oleh parent component
       } catch (error) {
         // Error toast sudah ditangani oleh parent, kita hanya perlu log di sini
@@ -145,11 +139,11 @@ export function ImportScheduleDialog({
 
   const handleClose = () => {
     handleReset();
-    onOpenChange(false);
+    setShowImportDialog(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={showImportDialog} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
@@ -237,6 +231,19 @@ export function ImportScheduleDialog({
                 </span>
               </div>
 
+              {/* Schedule Name Input */}
+              <div className="space-y-2">
+                <Label htmlFor="schedule-name">Nama Jadwal *</Label>
+                <Input
+                  id="schedule-name"
+                  type="text"
+                  placeholder="Masukkan nama jadwal"
+                  value={scheduleName}
+                  onChange={(e) => setScheduleName(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
               {/* Schedule Preview */}
               <div className="border rounded-lg overflow-hidden">
                 <div className="bg-gray-50 px-4 py-2 border-b">
@@ -248,25 +255,17 @@ export function ImportScheduleDialog({
                   {previewData.map((course, index) => (
                     <div
                       key={index}
-                      className="px-4 py-3 border-b last:border-b-0"
+                      className="flex items-center justify-between p-3 border-b last:border-b-0"
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className="font-medium text-gray-900">
-                              {course.code}-{course.class}
-                            </span>
-                            <span className="text-sm text-gray-600">
-                              • {course.credits} SKS
-                            </span>
-                          </div>
-                          <div className="text-sm text-gray-700 mb-1">
-                            {course.name}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {course.lecturer} • {course.day}, {course.startTime}
-                            -{course.endTime} • {course.room}
-                          </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">{course.name}</div>
+                        <div className="text-xs text-gray-600">
+                          {course.code} • {course.credits} SKS •{' '}
+                          {course.lecturer}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {course.day}, {course.startTime} - {course.endTime} •
+                          Ruang {course.room}
                         </div>
                       </div>
                     </div>
@@ -274,61 +273,32 @@ export function ImportScheduleDialog({
                 </div>
               </div>
 
-              {/* Schedule Name Input */}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="schedule-name" className="text-right">
-                  Nama Jadwal *
-                </Label>
-                <Input
-                  id="schedule-name"
-                  value={scheduleName}
-                  onChange={(e) => setScheduleName(e.target.value)}
-                  className="col-span-3"
-                  placeholder="Contoh: Jadwal Semester Genap 2024"
-                />
+              {/* Action Buttons */}
+              <div className="flex justify-between items-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={handleReset}
+                  disabled={isImporting}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Reset
+                </Button>
+                <Button
+                  onClick={handleImportClick}
+                  disabled={!scheduleName.trim() || isImporting}
+                >
+                  {isImporting ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  Import Jadwal
+                </Button>
               </div>
             </div>
           )}
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={handleClose}>
-              Batal
-            </Button>
-
-            {selectedFile && !isProcessing && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSelectedFile(null);
-                  setPreviewData(null);
-                  setValidationErrors([]);
-                  setScheduleName('');
-                }}
-              >
-                <X className="h-4 w-4 mr-2" />
-                Reset
-              </Button>
-            )}
-
-            {previewData && previewData.length > 0 && (
-              <Button
-                onClick={handleImport}
-                disabled={!scheduleName.trim() || isImporting}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {isImporting ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                ) : (
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                )}
-                {isImporting ? 'Mengimpor...' : 'Import Jadwal'}
-              </Button>
-            )}
-          </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-

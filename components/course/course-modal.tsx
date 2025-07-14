@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -20,27 +20,22 @@ import {
 } from '@/components/ui/select';
 
 import { toast } from 'sonner';
-import { Course } from '@/lib/types/course';
 
 import {
   createCourseSchema,
   type CreateCourseFormData,
 } from '@/lib/schemas/course';
 
-interface CourseModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  course?: Course | null;
-  onSave: (course: Partial<Course>) => void;
-}
+import { useCoursesStore } from '@/lib/stores/courses';
 
-export function CourseModal({
-  open,
-  onOpenChange,
-  course,
-  onSave,
-}: CourseModalProps) {
-  const [isLoading, setIsLoading] = useState(false);
+export function CourseModal() {
+  const {
+    showCourseModal,
+    setShowCourseModal,
+    editingCourse,
+    handleSaveCourse,
+    isSaving,
+  } = useCoursesStore();
 
   const {
     register,
@@ -56,61 +51,48 @@ export function CourseModal({
   const watchedValues = watch();
 
   useEffect(() => {
-    if (course) {
+    if (editingCourse) {
       // Pre-fill form with course data
-      setValue('code', course.code);
-      setValue('name', course.name);
-      setValue('lecturer', course.lecturer);
-      setValue('credits', course.credits);
-      setValue('room', course.room);
-      setValue('day', course.day);
+      setValue('code', editingCourse.code);
+      setValue('name', editingCourse.name);
+      setValue('lecturer', editingCourse.lecturer);
+      setValue('credits', editingCourse.credits);
+      setValue('room', editingCourse.room);
+      setValue('day', editingCourse.day);
       // Convert time format from HH:MM:SS to HH:MM for time inputs
-      setValue('startTime', course.startTime.substring(0, 5));
-      setValue('endTime', course.endTime.substring(0, 5));
-      setValue('semester', course.semester);
-      setValue('category', course.category);
-      setValue('class', course.class);
+      setValue('startTime', editingCourse.startTime.substring(0, 5));
+      setValue('endTime', editingCourse.endTime.substring(0, 5));
+      setValue('semester', editingCourse.semester);
+      setValue('category', editingCourse.category);
+      setValue('class', editingCourse.class);
     } else {
       // Reset form for new course
       reset();
     }
-  }, [course, setValue, reset]);
+  }, [editingCourse, setValue, reset]);
 
   const onSubmit = async (data: CreateCourseFormData) => {
-    setIsLoading(true);
+    // Validate time logic
+    const startTime = new Date(`2000-01-01T${data.startTime}:00`);
+    const endTime = new Date(`2000-01-01T${data.endTime}:00`);
 
-    try {
-      // Validate time logic
-      const startTime = new Date(`2000-01-01T${data.startTime}:00`);
-      const endTime = new Date(`2000-01-01T${data.endTime}:00`);
-
-      if (endTime <= startTime) {
-        toast.error('Jam selesai harus lebih besar dari jam mulai');
-        setIsLoading(false);
-        return;
-      }
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      onSave(data);
-      reset();
-    } catch {
-      toast.error('Terjadi kesalahan saat menyimpan mata kuliah');
-    } finally {
-      setIsLoading(false);
+    if (endTime <= startTime) {
+      toast.error('Jam selesai harus lebih besar dari jam mulai');
+      return;
     }
+
+    await handleSaveCourse(data);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={showCourseModal} onOpenChange={setShowCourseModal}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {course ? 'Edit Mata Kuliah' : 'Tambah Mata Kuliah'}
+            {editingCourse ? 'Edit Mata Kuliah' : 'Tambah Mata Kuliah'}
           </DialogTitle>
           <DialogDescription>
-            {course
+            {editingCourse
               ? 'Perbarui informasi mata kuliah'
               : 'Tambahkan mata kuliah baru ke dalam sistem'}
           </DialogDescription>
@@ -298,31 +280,21 @@ export function CourseModal({
             </div>
           </div>
 
-          {/* Form Actions */}
-          <div className="flex justify-end space-x-2 pt-4">
+          <div className="flex justify-end space-x-4 pt-4">
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isLoading}
+              onClick={() => setShowCourseModal(false)}
+              disabled={isSaving}
             >
               Batal
             </Button>
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isLoading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Menyimpan...</span>
-                </div>
-              ) : course ? (
-                'Perbarui'
-              ) : (
-                'Simpan'
-              )}
+            <Button type="submit" disabled={isSaving}>
+              {isSaving
+                ? 'Menyimpan...'
+                : editingCourse
+                  ? 'Perbarui'
+                  : 'Simpan'}
             </Button>
           </div>
         </form>

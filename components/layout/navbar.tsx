@@ -27,6 +27,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/hooks/use-auth';
 import { useAuthStore } from '@/lib/stores/auth';
+import { useCoursesStore } from '@/lib/stores/courses';
 
 export function Navbar() {
   const router = useRouter();
@@ -37,6 +38,7 @@ export function Navbar() {
 
   const handleLogout = async () => {
     const supabase = createClient();
+    useCoursesStore.persist.clearStorage();
     await supabase.auth.signOut();
     setMessage(null);
     router.push('/auth/login');

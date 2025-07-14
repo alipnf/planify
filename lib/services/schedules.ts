@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
 import { Course } from '@/lib/types/course';
+import { SavedSchedule } from '@/lib/types/schedule';
 
 const supabase = createClient();
 
@@ -9,16 +10,6 @@ async function getCurrentUser() {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-}
-
-export interface SavedSchedule {
-  id: string;
-  user_id: string;
-  created_at: string;
-  schedule_name: string;
-  schedule_data: Course[] | null;
-  is_shared: boolean;
-  share_id: string;
 }
 
 // Save a schedule to Supabase
@@ -87,27 +78,24 @@ export async function deleteSavedSchedule(scheduleId: string): Promise<void> {
   }
 }
 
-export async function getScheduleByShareId(
-  shareId: string
+export async function getSharedScheduleById(
+  scheduleId: string
 ): Promise<SavedSchedule | null> {
   try {
     const { data, error } = await supabase
       .from('saved_schedules')
       .select('*')
-      .eq('share_id', shareId)
+      .eq('id', scheduleId)
       .eq('is_shared', true)
       .single();
 
-    // .single() throws an error if no rows are found (PGRST116).
-    // We can treat this specific case as "not found" and return null.
-    // For any other error, we let it be caught by the catch block.
     if (error && error.code !== 'PGRST116') {
       throw error;
     }
 
     return data;
   } catch (error) {
-    console.error('Failed to get schedule by share ID:', error);
+    console.error('Failed to get schedule by ID:', error);
     return null;
   }
 }

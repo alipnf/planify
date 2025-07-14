@@ -23,62 +23,27 @@ import {
 } from '@/lib/course-utils';
 import React from 'react';
 import { CategoryBadge } from '@/components/ui/category-badge';
+import { useCreateSchedule } from '@/lib/hooks/use-create-schedule';
 
-interface TimeConflict {
-  courses: [Course, Course];
-  course1: Course;
-  course2: Course;
-  day: string;
-  time: string;
-}
+export function CourseSelectionPanel() {
+  const {
+    filteredCourses,
+    selectedCourses,
+    toggleCourse,
+    searchQuery,
+    setSearchQuery,
+    filterSemester,
+    setFilterSemester,
+    filterClass,
+    setFilterClass,
+    groupByCode,
+    setGroupByCode,
+    conflicts,
+    stats,
+    isLoading,
+  } = useCreateSchedule();
 
-interface ScheduleStats {
-  totalCredits: number;
-  totalCourses: number;
-  creditsPerDay: Record<string, number>;
-  busiestDay: { day: string; credits: number };
-  dailyDistribution: Array<{ day: string; credits: number; courses: number }>;
-  timeSpan: { earliest: string; latest: string };
-  conflicts: number;
-  busyHours: number;
-  earliestClass: string;
-  latestClass: string;
-  freeHours: number;
-}
-
-interface CourseSelectionPanelProps {
-  courses: Course[];
-  selectedCourses: Course[];
-  onCourseToggle: (course: Course) => void;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  filterSemester: string;
-  onFilterChange: (semester: string) => void;
-  filterClass: string;
-  onClassChange: (classValue: string) => void;
-  groupByCode: boolean;
-  onGroupByCodeChange: (group: boolean) => void;
-  conflicts: TimeConflict[];
-  stats: ScheduleStats;
-  isLoading?: boolean;
-}
-
-export function CourseSelectionPanel({
-  courses,
-  selectedCourses,
-  onCourseToggle,
-  searchQuery,
-  onSearchChange,
-  filterSemester,
-  onFilterChange,
-  filterClass,
-  onClassChange,
-  groupByCode,
-  onGroupByCodeChange,
-  conflicts,
-  stats,
-  isLoading = false,
-}: CourseSelectionPanelProps) {
+  const courses = filteredCourses();
   const availableClasses = React.useMemo(
     () => getAvailableClasses(courses),
     [courses]
@@ -179,12 +144,12 @@ export function CourseSelectionPanel({
                   {selectedCourses.length} Mata Kuliah
                 </div>
                 <div className="text-xs text-gray-500">
-                  {stats.totalCredits} SKS
+                  {stats().totalCredits} SKS
                 </div>
               </div>
-              {conflicts.length > 0 && (
+              {conflicts().length > 0 && (
                 <Badge variant="destructive" className="text-xs">
-                  {conflicts.length} Bentrok
+                  {conflicts().length} Bentrok
                 </Badge>
               )}
             </div>
@@ -199,13 +164,16 @@ export function CourseSelectionPanel({
                 <Input
                   placeholder="Cari mata kuliah..."
                   value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-10 w-full pl-9"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <Select value={filterSemester} onValueChange={onFilterChange}>
+                <Select
+                  value={filterSemester}
+                  onValueChange={setFilterSemester}
+                >
                   <SelectTrigger className="h-10">
                     <SelectValue placeholder="Filter Semester" />
                   </SelectTrigger>
@@ -220,7 +188,7 @@ export function CourseSelectionPanel({
                 </Select>
                 <Select
                   value={filterClass}
-                  onValueChange={onClassChange}
+                  onValueChange={setFilterClass}
                   disabled={availableClasses.length === 0}
                 >
                   <SelectTrigger className="h-10">
@@ -243,7 +211,7 @@ export function CourseSelectionPanel({
                 <Switch
                   id="group-by-code"
                   checked={groupByCode}
-                  onCheckedChange={onGroupByCodeChange}
+                  onCheckedChange={setGroupByCode}
                 />
                 <Label
                   htmlFor="group-by-code"
@@ -280,7 +248,7 @@ export function CourseSelectionPanel({
     const isSelected = selectedCourses.some((c) => c.id === course.id);
     const isConflicted =
       isSelected &&
-      conflicts.some(
+      conflicts().some(
         (conflict) =>
           conflict.course1.id === course.id || conflict.course2.id === course.id
       );
@@ -295,7 +263,7 @@ export function CourseSelectionPanel({
               : 'border-blue-200 bg-blue-50 hover:bg-blue-100'
             : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
         } ${groupByCode ? 'ml-4 my-2' : ''}`}
-        onClick={() => onCourseToggle(course)}
+        onClick={() => toggleCourse(course)}
       >
         <div className="flex items-start justify-between">
           <div className="flex-1">
