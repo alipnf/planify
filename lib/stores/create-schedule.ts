@@ -80,13 +80,36 @@ export const useCreateScheduleStore = create<CreateScheduleState>(
       if (isSelected) {
         set({ selectedCourses: current.filter((c) => c.id !== course.id) });
       } else {
+        // Check if adding this course would exceed 24 SKS limit
+        const currentTotalSKS = current.reduce((sum, c) => sum + c.credits, 0);
+        const newTotalSKS = currentTotalSKS + course.credits;
+
+        if (newTotalSKS > 24) {
+          toast.error(
+            `Tidak dapat menambah mata kuliah. Total SKS akan menjadi ${newTotalSKS}, melebihi batas maksimal 24 SKS.`
+          );
+          return;
+        }
+
         set({ selectedCourses: [...current, course] });
       }
     },
 
     clearAllSelections: () => set({ selectedCourses: [] }),
 
-    setSelectedCoursesDirectly: (courses) => set({ selectedCourses: courses }),
+    setSelectedCoursesDirectly: (courses) => {
+      // Check if the courses exceed 24 SKS limit
+      const totalSKS = courses.reduce((sum, c) => sum + c.credits, 0);
+
+      if (totalSKS > 24) {
+        toast.error(
+          `Jadwal yang dipilih melebihi batas maksimal 24 SKS (total: ${totalSKS} SKS). Silakan pilih ulang mata kuliah.`
+        );
+        return;
+      }
+
+      set({ selectedCourses: courses });
+    },
 
     setSearchQuery: (query) => set({ searchQuery: query }),
 
@@ -136,4 +159,3 @@ export const useCreateScheduleStore = create<CreateScheduleState>(
     },
   })
 );
-

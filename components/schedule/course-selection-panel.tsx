@@ -143,13 +143,31 @@ export function CourseSelectionPanel() {
                 <div className="text-sm font-medium text-gray-900">
                   {selectedCourses.length} Mata Kuliah
                 </div>
-                <div className="text-xs text-gray-500">
-                  {stats().totalCredits} SKS
+                <div
+                  className={`text-xs ${
+                    stats().totalCredits > 24
+                      ? 'text-red-600 font-semibold'
+                      : stats().totalCredits >= 20
+                        ? 'text-yellow-600 font-medium'
+                        : 'text-gray-500'
+                  }`}
+                >
+                  {stats().totalCredits}/24 SKS
+                  {stats().totalCredits > 24 && ' (Melebihi batas)'}
+                  {stats().totalCredits >= 20 &&
+                    stats().totalCredits < 24 &&
+                    ' (Mendekati batas)'}
+                  {stats().totalCredits === 24 && ' (Batas maksimal)'}
                 </div>
               </div>
               {conflicts().length > 0 && (
                 <Badge variant="destructive" className="text-xs">
                   {conflicts().length} Bentrok
+                </Badge>
+              )}
+              {stats().totalCredits > 24 && (
+                <Badge variant="destructive" className="text-xs">
+                  Melebihi 24 SKS
                 </Badge>
               )}
             </div>
