@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Upload, FileText, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Course } from '@/lib/types/course';
+import { CourseCard } from '@/components/ui/course-card';
 import { useSavedSchedulesStore } from '@/lib/stores/saved';
 import { z } from 'zod';
 
@@ -251,24 +252,14 @@ export function ImportScheduleDialog() {
                     Preview Mata Kuliah yang Akan Diimpor
                   </h4>
                 </div>
-                <div className="max-h-60 overflow-y-auto">
+                <div className="max-h-60 overflow-y-auto space-y-3 p-4">
                   {previewData.map((course, index) => (
-                    <div
+                    <CourseCard
                       key={index}
-                      className="flex items-center justify-between p-3 border-b last:border-b-0"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium text-sm">{course.name}</div>
-                        <div className="text-xs text-gray-600">
-                          {course.code} • {course.credits} SKS •{' '}
-                          {course.lecturer}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {course.day}, {course.startTime} - {course.endTime} •
-                          Ruang {course.room}
-                        </div>
-                      </div>
-                    </div>
+                      course={course}
+                      variant="compact"
+                      className="hover:bg-gray-50"
+                    />
                   ))}
                 </div>
               </div>

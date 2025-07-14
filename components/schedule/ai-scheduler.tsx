@@ -13,10 +13,9 @@ import { Label } from '@/components/ui/label';
 import { useState } from 'react';
 import { Course } from '@/lib/types/course';
 import { detectTimeConflicts, daysOfWeek } from '@/lib/schedule-utils';
-import { formatTimeRange } from '@/lib/course-utils';
 import { WeeklySchedule } from './weekly-schedule';
 import { Textarea } from '../ui/textarea';
-import { CategoryBadge } from '../ui/category-badge';
+import { CourseCard } from '../ui/course-card';
 import { useCoursesStore } from '@/lib/stores/courses';
 import { useCreateSchedule } from '@/lib/hooks/use-create-schedule';
 import { useSettingsStore } from '@/lib/stores/settings';
@@ -268,33 +267,20 @@ export function AIScheduler() {
                     })()}
 
                     {/* Course List */}
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                    <div className="space-y-3 max-h-40 overflow-y-auto">
                       {option.courses.map((course) => (
-                        <div
+                        <CourseCard
                           key={course.id}
-                          className="flex items-center justify-between p-2 bg-white border rounded text-sm"
+                          course={course}
+                          variant="minimal"
+                          className="hover:bg-gray-50"
                         >
-                          <div className="flex-1">
-                            <div className="font-medium">{course.name}</div>
-                            <div className="text-xs text-gray-500">
-                              {course.code} • Kelas {course.class} •{' '}
-                              {course.day} •{' '}
-                              {formatTimeRange(
-                                course.startTime,
-                                course.endTime
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                          <div className="flex items-center justify-end space-x-2 mt-2">
+                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
                               {course.credits} SKS
                             </span>
-                            <CategoryBadge
-                              category={course.category}
-                              className="text-xs"
-                            />
                           </div>
-                        </div>
+                        </CourseCard>
                       ))}
                     </div>
 

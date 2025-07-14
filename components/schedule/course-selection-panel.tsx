@@ -256,49 +256,86 @@ export function CourseSelectionPanel() {
     return (
       <div
         key={course.id}
-        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+        className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
           isSelected
             ? isConflicted
-              ? 'border-red-200 bg-red-50 hover:bg-red-100'
-              : 'border-blue-200 bg-blue-50 hover:bg-blue-100'
-            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+              ? 'border-red-200 bg-red-50 hover:bg-red-100 shadow-sm'
+              : 'border-blue-200 bg-blue-50 hover:bg-blue-100 shadow-sm'
+            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm'
         } ${groupByCode ? 'ml-4 my-2' : ''}`}
         onClick={() => toggleCourse(course)}
       >
         <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="font-medium text-sm">
-              {groupByCode ? `Kelas ${course.class}` : course.name}
+          <div className="flex-1 space-y-2">
+            {/* Header dengan nama mata kuliah dan badge */}
+            <div className="flex items-start justify-between">
+              <h4 className="font-medium text-sm text-gray-900 leading-tight">
+                {groupByCode ? `Kelas ${course.class}` : course.name}
+              </h4>
+              <CategoryBadge
+                category={course.category}
+                className="text-xs ml-2 flex-shrink-0"
+              />
             </div>
-            <div className="text-xs text-gray-500 mt-1">
-              <span className="font-medium">{getFullCourseCode(course)}</span> •{' '}
-              {course.credits} SKS • {course.lecturer}
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              {course.day}, {formatTimeRange(course.startTime, course.endTime)}{' '}
-              • {course.room}
-            </div>
-            <CategoryBadge
-              category={course.category}
-              className="text-xs mt-1"
-            />
 
+            {/* Info dasar mata kuliah */}
+            <div className="space-y-1">
+              <div className="flex items-center text-xs text-gray-600">
+                <span className="font-medium">Kode:</span>
+                <span className="ml-1">{getFullCourseCode(course)}</span>
+                <span className="mx-2">•</span>
+                <span className="font-medium">SKS:</span>
+                <span className="ml-1">{course.credits}</span>
+              </div>
+
+              <div className="flex items-center text-xs text-gray-600">
+                <span className="font-medium">Dosen:</span>
+                <span className="ml-1">{course.lecturer}</span>
+              </div>
+            </div>
+
+            {/* Info jadwal */}
+            <div className="pt-1 border-t border-gray-100">
+              <div className="flex items-center text-xs text-gray-600">
+                <span className="font-medium">Waktu:</span>
+                <span className="ml-1">
+                  {course.day},{' '}
+                  {formatTimeRange(course.startTime, course.endTime)}
+                </span>
+              </div>
+              <div className="flex items-center text-xs text-gray-600 mt-1">
+                <span className="font-medium">Ruang:</span>
+                <span className="ml-1">{course.room}</span>
+              </div>
+            </div>
+
+            {/* Warning jika ada konflik */}
             {isConflicted && (
-              <div className="text-xs text-red-600 mt-1">
-                ⚠️ Bentrok waktu dengan mata kuliah lain
+              <div className="p-2 bg-red-100 border border-red-200 rounded text-xs text-red-700 mt-2">
+                <div className="flex items-center">
+                  <span className="mr-1">⚠️</span>
+                  <span className="font-medium">
+                    Bentrok waktu dengan mata kuliah lain
+                  </span>
+                </div>
               </div>
             )}
           </div>
 
-          <div className="ml-2">
+          {/* Action icon */}
+          <div className="ml-3 flex-shrink-0">
             {isSelected ? (
               <div
-                className={`p-1 rounded ${isConflicted ? 'text-red-600' : 'text-blue-600'}`}
+                className={`p-2 rounded-full ${
+                  isConflicted
+                    ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                    : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                } transition-colors`}
               >
                 <Minus className="h-4 w-4" />
               </div>
             ) : (
-              <div className="p-1 rounded text-gray-400 hover:text-gray-600">
+              <div className="p-2 rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors">
                 <Plus className="h-4 w-4" />
               </div>
             )}
