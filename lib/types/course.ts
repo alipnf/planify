@@ -122,7 +122,9 @@ export interface CoursesActions {
   // Data Actions
   loadCourses: (forceRefresh?: boolean) => Promise<void>;
   handleSaveCourse: (courseData: Partial<Course>) => Promise<void>;
-  handleImportCourses: (importedCourses: CreateCourseData[]) => Promise<void>;
+  handleImportCourses: (
+    importedCourses: CreateCourseData[]
+  ) => Promise<Course[] | undefined>;
   handleExportAll: () => void;
 
   // UI Actions

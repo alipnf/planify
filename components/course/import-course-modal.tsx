@@ -8,7 +8,14 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Upload, FileText, CheckCircle, AlertTriangle, X } from 'lucide-react';
+import {
+  Upload,
+  FileText,
+  CheckCircle,
+  AlertTriangle,
+  X,
+  Loader2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { CreateCourseData } from '@/lib/types/course';
 import { formatTimeRange } from '@/lib/course-utils';
@@ -20,6 +27,7 @@ export function ImportCoursesModal() {
     useCoursesStore();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [previewData, setPreviewData] = useState<CreateCourseData[] | null>(
     null
   );
@@ -202,11 +210,19 @@ export function ImportCoursesModal() {
     return { validatedData: validatedCourses, errors };
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (previewData && previewData.length > 0) {
-      handleImportCourses(previewData);
-      handleReset();
-      toast.success(`${previewData.length} mata kuliah berhasil diimpor`);
+      setIsImporting(true);
+      try {
+        await handleImportCourses(previewData);
+        // Reset hanya jika berhasil (modal sudah tertutup dari store)
+        handleReset();
+      } catch (error) {
+        // Jangan reset jika ada error, biarkan user melihat data dan bisa retry
+        console.error('Error importing courses:', error);
+      } finally {
+        setIsImporting(false);
+      }
     }
   };
 
@@ -215,6 +231,7 @@ export function ImportCoursesModal() {
     setPreviewData(null);
     setValidationErrors([]);
     setIsProcessing(false);
+    setIsImporting(false);
   };
 
   const handleClose = () => {
@@ -375,10 +392,20 @@ export function ImportCoursesModal() {
             {previewData && previewData.length > 0 && (
               <Button
                 onClick={handleImport}
-                className="bg-green-600 hover:bg-green-700"
+                disabled={isImporting}
+                className="bg-primary disabled:opacity-50"
               >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Import {previewData.length} Mata Kuliah
+                {isImporting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Mengimpor...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Import {previewData.length} Mata Kuliah
+                  </>
+                )}
               </Button>
             )}
           </div>

@@ -199,18 +199,23 @@ export const useCoursesStore = create<Store>()(
           toast.info('Tidak ada mata kuliah untuk diimpor.');
           return;
         }
-        set({ showImportModal: false });
 
-        const promise = coursesService.importCourses(importedCourses);
-
-        toast.promise(promise, {
-          loading: 'Mengimpor mata kuliah...',
-          success: (newCourses) => {
-            get().loadCourses(true); // Force refresh
-            return `${newCourses.length} mata kuliah berhasil diimpor`;
-          },
-          error: (err) => err.message || 'Gagal mengimpor mata kuliah',
-        });
+        try {
+          const newCourses =
+            await coursesService.importCourses(importedCourses);
+          await get().loadCourses(true); // Force refresh
+          toast.success(`${newCourses.length} mata kuliah berhasil diimpor`);
+          set({ showImportModal: false }); // Tutup modal setelah berhasil
+          return newCourses;
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : 'Gagal mengimpor mata kuliah';
+          toast.error(errorMessage);
+          // Jangan tutup modal jika ada error, biarkan user melihat error
+          throw error;
+        }
       },
 
       handleExportAll: () => {
