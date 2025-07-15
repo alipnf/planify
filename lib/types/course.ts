@@ -115,6 +115,7 @@ export interface CoursesState {
   someSelected: boolean;
   hasFilters: boolean;
   isSaving: boolean;
+  isDeleting: boolean;
 }
 
 export interface CoursesActions {

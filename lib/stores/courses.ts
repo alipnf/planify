@@ -61,6 +61,7 @@ export const useCoursesStore = create<Store>()(
       groupByCode: false,
       isLoading: true,
       isSaving: false,
+      isDeleting: false,
       showDeleteDialog: false,
       showBulkDeleteDialog: false,
       courseToDelete: null,
@@ -293,18 +294,26 @@ export const useCoursesStore = create<Store>()(
         const state = get();
         if (!state.courseToDelete) return;
 
+        set({ isDeleting: true });
         try {
-          const courseName = `${getFullCourseCode(state.courseToDelete)} - ${state.courseToDelete.name}`;
+          const courseName = `${getFullCourseCode(state.courseToDelete)} - ${
+            state.courseToDelete.name
+          }`;
           await coursesService.deleteCourse({
             course_code: state.courseToDelete.code,
             class_name: state.courseToDelete.class,
           });
           await get().loadCourses(true); // Force refresh
           toast.success(`${courseName} berhasil dihapus`);
-          set({ showDeleteDialog: false, courseToDelete: null });
         } catch (error) {
           console.error('Error deleting course:', error);
           toast.error('Gagal menghapus mata kuliah');
+        } finally {
+          set({
+            showDeleteDialog: false,
+            courseToDelete: null,
+            isDeleting: false,
+          });
         }
       },
 
@@ -312,6 +321,7 @@ export const useCoursesStore = create<Store>()(
         const state = get();
         if (state.selectedCourses.length === 0) return;
 
+        set({ isDeleting: true });
         const coursesToDelete = state.courses
           .filter((c) => state.selectedCourses.includes(c.id))
           .map((c) => ({ course_code: c.code, class_name: c.class }));
@@ -322,10 +332,15 @@ export const useCoursesStore = create<Store>()(
           toast.success(
             `${coursesToDelete.length} mata kuliah berhasil dihapus`
           );
-          set({ showBulkDeleteDialog: false, selectedCourses: [] });
         } catch (error) {
           console.error('Error bulk deleting courses:', error);
           toast.error('Gagal menghapus beberapa mata kuliah');
+        } finally {
+          set({
+            showBulkDeleteDialog: false,
+            selectedCourses: [],
+            isDeleting: false,
+          });
         }
       },
 

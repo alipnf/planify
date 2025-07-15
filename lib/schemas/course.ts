@@ -5,10 +5,11 @@ export const courseValidation = {
   code: z
     .string({ required_error: 'Kode mata kuliah harus diisi' })
     .min(1, 'Kode mata kuliah harus diisi')
-    .min(5, 'Kode mata kuliah minimal 5 karakter')
+    .min(3, 'Kode mata kuliah minimal 3 karakter')
     .max(10, 'Kode mata kuliah maksimal 10 karakter')
-    .regex(
-      /^[A-Z0-9]+$/,
+    .transform((val) => val.toUpperCase())
+    .refine(
+      (val) => /^[A-Z0-9]+$/.test(val),
       'Kode mata kuliah hanya boleh menggunakan huruf besar dan angka'
     ),
 
@@ -71,8 +72,9 @@ export const courseValidation = {
     .min(1, 'Kelas harus diisi')
     .min(1, 'Kelas minimal 1 karakter')
     .max(5, 'Kelas maksimal 5 karakter')
-    .regex(
-      /^[A-Z0-9]+$/,
+    .transform((val) => val.toUpperCase())
+    .refine(
+      (val) => /^[A-Z0-9]+$/.test(val),
       'Kelas hanya boleh menggunakan huruf besar dan angka'
     ),
 };

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { getFullCourseCode } from '@/lib/course-utils';
 import { useCoursesStore } from '@/lib/stores/courses';
+import { Loader2 } from 'lucide-react';
 
 export function CourseDeleteDialogs() {
   const {
@@ -22,6 +23,7 @@ export function CourseDeleteDialogs() {
     handleConfirmBulkDelete,
     selectedCourseNames,
     selectedCourses,
+    isDeleting,
   } = useCoursesStore();
 
   const selectedCount = selectedCourses.length;
@@ -44,11 +46,16 @@ export function CourseDeleteDialogs() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleConfirmDelete}
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmDelete();
+              }}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={isDeleting}
             >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Hapus Mata Kuliah
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -100,11 +107,16 @@ export function CourseDeleteDialogs() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleConfirmBulkDelete}
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmBulkDelete();
+              }}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={isDeleting}
             >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Hapus {selectedCount} Mata Kuliah
             </AlertDialogAction>
           </AlertDialogFooter>

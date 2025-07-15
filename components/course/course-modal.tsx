@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select';
 
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 import {
   createCourseSchema,
@@ -53,7 +54,7 @@ export function CourseModal() {
   useEffect(() => {
     if (editingCourse) {
       // Pre-fill form with course data
-      setValue('code', editingCourse.code);
+      setValue('code', editingCourse.code.toUpperCase());
       setValue('name', editingCourse.name);
       setValue('lecturer', editingCourse.lecturer);
       setValue('credits', editingCourse.credits);
@@ -64,7 +65,7 @@ export function CourseModal() {
       setValue('endTime', editingCourse.endTime.substring(0, 5));
       setValue('semester', editingCourse.semester);
       setValue('category', editingCourse.category);
-      setValue('class', editingCourse.class);
+      setValue('class', editingCourse.class.toUpperCase());
     } else {
       // Reset form for new course
       reset();
@@ -81,7 +82,14 @@ export function CourseModal() {
       return;
     }
 
-    await handleSaveCourse(data);
+    // Transform code and class to uppercase
+    const transformedData = {
+      ...data,
+      code: data.code.toUpperCase(),
+      class: data.class.toUpperCase(),
+    };
+
+    await handleSaveCourse(transformedData);
   };
 
   return (
@@ -103,7 +111,16 @@ export function CourseModal() {
             {/* Course Code */}
             <div className="space-y-2">
               <Label htmlFor="code">Kode Mata Kuliah *</Label>
-              <Input id="code" placeholder="CS101" {...register('code')} />
+              <Input
+                id="code"
+                placeholder="CS101"
+                {...register('code')}
+                onChange={(e) => {
+                  const upperValue = e.target.value.toUpperCase();
+                  setValue('code', upperValue);
+                }}
+                style={{ textTransform: 'uppercase' }}
+              />
               {errors.code && (
                 <p className="text-sm text-red-600">{errors.code.message}</p>
               )}
@@ -116,6 +133,11 @@ export function CourseModal() {
                 id="class"
                 placeholder="A, B, C, AA, BB, dll"
                 {...register('class')}
+                onChange={(e) => {
+                  const upperValue = e.target.value.toUpperCase();
+                  setValue('class', upperValue);
+                }}
+                style={{ textTransform: 'uppercase' }}
               />
               {errors.class && (
                 <p className="text-sm text-red-600">{errors.class.message}</p>
@@ -290,6 +312,7 @@ export function CourseModal() {
               Batal
             </Button>
             <Button type="submit" disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isSaving
                 ? 'Menyimpan...'
                 : editingCourse
