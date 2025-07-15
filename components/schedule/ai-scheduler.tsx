@@ -5,12 +5,13 @@ import {
   CheckCircle,
   Eye,
   Save,
+  Settings,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Course } from '@/lib/types/course';
 import { detectTimeConflicts, daysOfWeek } from '@/lib/schedule-utils';
 import { WeeklySchedule } from './weekly-schedule';
@@ -30,16 +31,30 @@ interface SchedulePreferences {
   avoidedCourses: string[];
 }
 
-interface ScheduleOptionView {
-  id: number;
-  courses: Course[];
-  totalCredits: number;
-}
-
 export function AIScheduler() {
   const { courses } = useCoursesStore();
   const { savedApiKey } = useSettingsStore();
-  const { handleAIEdit, handleAISave } = useCreateSchedule();
+  const {
+    handleAIEdit,
+    handleAISave,
+    // AI state from store
+    aiPrompt,
+    isGenerating,
+    scheduleOptions,
+    selectedOptionId,
+    previewCourses,
+    errorMessage,
+    showApiKeyAlert,
+    // AI actions from store
+    setAiPrompt,
+    setIsGenerating,
+    setScheduleOptions,
+    setSelectedOptionId,
+    setPreviewCourses,
+    setErrorMessage,
+    setShowApiKeyAlert,
+  } = useCreateSchedule();
+  const router = useRouter();
 
   const preferences: SchedulePreferences = {
     targetCredits: 20,
@@ -50,15 +65,6 @@ export function AIScheduler() {
     requiredCourses: [],
     avoidedCourses: [],
   };
-
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [scheduleOptions, setScheduleOptions] = useState<ScheduleOptionView[]>(
-    []
-  );
-  const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
-  const [previewCourses, setPreviewCourses] = useState<Course[]>([]);
-  const [prompt, setPrompt] = useState('');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Generate schedule options via Gemini API
   const generateScheduleOptions = async () => {
@@ -80,7 +86,7 @@ export function AIScheduler() {
         body: JSON.stringify({
           courses,
           preferences,
-          userPrompt: prompt,
+          userPrompt: aiPrompt,
           apiKey,
         }),
       });
@@ -88,6 +94,27 @@ export function AIScheduler() {
       const result = await response.json();
 
       if (!response.ok) {
+        // Handle API key not configured error
+        if (
+          response.status === 400 &&
+          result.error?.includes('API key tidak dikonfigurasi')
+        ) {
+          setShowApiKeyAlert(true);
+          setErrorMessage(null);
+          return;
+        }
+
+        // Handle server error
+        if (response.status === 500) {
+          setErrorMessage('Server sedang sibuk');
+          console.error(
+            'Server error generating schedule options:',
+            result.details
+          );
+          return;
+        }
+
+        // Handle other errors
         setErrorMessage(
           result.error || 'Terjadi kesalahan saat membuat jadwal.'
         );
@@ -95,7 +122,7 @@ export function AIScheduler() {
         return;
       }
       const schedules = result.options as Course[][];
-      const mappedOptions: ScheduleOptionView[] = schedules.map(
+      const mappedOptions = schedules.map(
         (courseArr: Course[], index: number) => ({
           id: index + 1,
           courses: courseArr,
@@ -107,7 +134,7 @@ export function AIScheduler() {
       );
       setScheduleOptions(mappedOptions);
     } catch (error) {
-      setErrorMessage('Gagal terhubung ke server. Silakan coba lagi.');
+      setErrorMessage('Server sedang sibuk');
       console.error('Error generating schedule options:', error);
     } finally {
       setIsGenerating(false);
@@ -122,7 +149,11 @@ export function AIScheduler() {
     });
   };
 
-  const handlePreviewOption = (option: ScheduleOptionView) => {
+  const handlePreviewOption = (option: {
+    id: number;
+    courses: Course[];
+    totalCredits: number;
+  }) => {
     setPreviewCourses(option.courses);
     setSelectedOptionId(option.id);
   };
@@ -147,8 +178,8 @@ export function AIScheduler() {
               <Textarea
                 id="prompt-input"
                 placeholder="Contoh: 'saya ingin kelas dimulai jam 8 pagi, hindari kelas di hari jumat, prioritaskan mata kuliah wajib, target 20 SKS, lebih suka lab komputer'"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
                 rows={4}
               />
             </div>
@@ -157,7 +188,7 @@ export function AIScheduler() {
           <Button
             onClick={generateScheduleOptions}
             disabled={
-              isGenerating || courses.length === 0 || prompt.trim() === ''
+              isGenerating || courses.length === 0 || aiPrompt.trim() === ''
             }
             className="w-full"
           >
@@ -181,6 +212,30 @@ export function AIScheduler() {
             </Alert>
           )}
 
+          {showApiKeyAlert && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between">
+                <span>
+                  API Gemini belum dikonfigurasi. Harap atur custom API di
+                  halaman pengaturan.
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowApiKeyAlert(false);
+                    router.push('/settings');
+                  }}
+                  className="ml-2"
+                >
+                  <Settings className="mr-1 h-3 w-3" />
+                  Pengaturan
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Info Alert */}
           <Alert>
             <AlertCircle className="h-4 w-4" />
@@ -190,7 +245,6 @@ export function AIScheduler() {
               & Simpan&quot; untuk menyimpan.
             </AlertDescription>
           </Alert>
-          {/* Debug UI removed */}
         </CardContent>
       </Card>
 

@@ -17,6 +17,7 @@ export const useCreateSchedule = () => {
   const handleConfirmSave = async (scheduleName: string) => {
     try {
       await store.handleConfirmSave(scheduleName);
+      store.resetAllState();
       router.push('/saved');
     } catch (error) {
       throw error;
