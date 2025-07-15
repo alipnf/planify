@@ -1,4 +1,5 @@
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useForm, type FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createClient } from '@/lib/supabase/client';
@@ -35,6 +36,7 @@ export function useAuth<T extends FieldValues>({
   redirectConfig,
 }: AuthConfig<T>) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     register,
     handleSubmit,
@@ -68,9 +70,15 @@ export function useAuth<T extends FieldValues>({
         }
       } else {
         setMessage({ type: 'success', text: successMessage });
-        if (redirectConfig) {
-          router.push(redirectConfig.path);
+
+        // Check for callbackUrl parameter first, then use redirectConfig
+        const callbackUrl = searchParams.get('callbackUrl');
+        const redirectPath = callbackUrl || redirectConfig?.path;
+
+        if (redirectPath) {
+          router.push(redirectPath);
         }
+
         setTimeout(() => {
           setMessage(null);
         }, 3000);
