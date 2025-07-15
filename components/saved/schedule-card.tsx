@@ -12,6 +12,7 @@ import {
   Book,
   Clock,
   Eye,
+  Loader2,
   Share2 as Share,
   Trash2,
   Upload,
@@ -32,6 +33,8 @@ export function ScheduleCard({ schedule, isActive }: ScheduleCardProps) {
     handlePreviewClick,
     handleExport,
     handleShareClick,
+    isSharing,
+    scheduleBeingShared,
   } = useSavedSchedulesStore();
 
   const { totalCredits, courseCount } = useMemo(() => {
@@ -83,8 +86,13 @@ export function ScheduleCard({ schedule, isActive }: ScheduleCardProps) {
             variant="ghost"
             size="icon"
             onClick={() => handleShareClick(schedule)}
+            disabled={isSharing && scheduleBeingShared === schedule.id}
           >
-            <Share className="h-4 w-4" />
+            {isSharing && scheduleBeingShared === schedule.id ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Share className="h-4 w-4" />
+            )}
           </Button>
           <Button
             variant="ghost"

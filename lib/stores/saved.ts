@@ -14,6 +14,8 @@ type SavedSchedulesState = {
   schedules: SavedSchedule[];
   isLoading: boolean;
   isDeleting: boolean;
+  isSharing: boolean;
+  scheduleBeingShared: string | null;
   error: string | null;
   showDeleteAlert: boolean;
   scheduleToDelete: SavedSchedule | null;
@@ -41,6 +43,8 @@ export const useSavedSchedulesStore = create<SavedSchedulesState>(
     schedules: [],
     isLoading: true,
     isDeleting: false,
+    isSharing: false,
+    scheduleBeingShared: null,
     error: null,
     showDeleteAlert: false,
     scheduleToDelete: null,
@@ -117,28 +121,33 @@ export const useSavedSchedulesStore = create<SavedSchedulesState>(
       linkElement.click();
     },
     handleShareClick: async (schedule) => {
-      let targetSchedule = schedule;
-      if (!targetSchedule.is_shared) {
-        try {
-          const updatedSchedule = await updateScheduleSharing(
-            targetSchedule.id,
-            true
-          );
-          set({
-            schedules: get().schedules.map((s) =>
-              s.id === targetSchedule.id ? updatedSchedule : s
-            ),
-          });
-          targetSchedule = updatedSchedule;
-          toast.success('Jadwal sekarang publik dan bisa dibagikan.');
-        } catch (err) {
-          console.error('Failed to update schedule sharing:', err);
-          toast.error('Gagal memperbarui status berbagi jadwal.');
-          return;
+      set({ isSharing: true, scheduleBeingShared: schedule.id });
+      try {
+        let targetSchedule = schedule;
+        if (!targetSchedule.is_shared) {
+          try {
+            const updatedSchedule = await updateScheduleSharing(
+              targetSchedule.id,
+              true
+            );
+            set((state) => ({
+              schedules: state.schedules.map((s) =>
+                s.id === targetSchedule.id ? updatedSchedule : s
+              ),
+            }));
+            targetSchedule = updatedSchedule;
+            toast.success('Jadwal sekarang publik dan bisa dibagikan.');
+          } catch (err) {
+            console.error('Failed to update schedule sharing:', err);
+            toast.error('Gagal memperbarui status berbagi jadwal.');
+            return;
+          }
         }
+        const url = `${window.location.origin}/share/${targetSchedule.id}`;
+        set({ shareUrl: url, showShareDialog: true });
+      } finally {
+        set({ isSharing: false, scheduleBeingShared: null });
       }
-      const url = `${window.location.origin}/share/${targetSchedule.id}`;
-      set({ shareUrl: url, showShareDialog: true });
     },
     handleImport: async (name, courses) => {
       try {
@@ -154,4 +163,3 @@ export const useSavedSchedulesStore = create<SavedSchedulesState>(
     },
   })
 );
-
