@@ -30,7 +30,9 @@ export function CourseTableSkeleton({ rows = 5 }: CourseTableSkeletonProps) {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">
-                  <Skeleton className="h-4 w-4" />
+                  <div className="flex items-center justify-center">
+                    <Skeleton className="h-4 w-4" />
+                  </div>
                 </TableHead>
                 <TableHead>
                   <Skeleton className="h-4 w-16" />
@@ -66,51 +68,53 @@ export function CourseTableSkeleton({ rows = 5 }: CourseTableSkeletonProps) {
                 <TableRow key={index}>
                   {/* Checkbox */}
                   <TableCell>
-                    <Skeleton className="h-4 w-4" />
+                    <div className="flex items-center justify-center">
+                      <Skeleton className="h-4 w-4" />
+                    </div>
                   </TableCell>
-                  
+
                   {/* Kode */}
                   <TableCell>
                     <Skeleton className="h-4 w-16 mb-1" />
                     <Skeleton className="h-3 w-20" />
                   </TableCell>
-                  
+
                   {/* Kelas */}
                   <TableCell>
                     <Skeleton className="h-4 w-8" />
                   </TableCell>
-                  
+
                   {/* Mata Kuliah */}
                   <TableCell>
                     <Skeleton className="h-4 w-32" />
                   </TableCell>
-                  
+
                   {/* Dosen */}
                   <TableCell>
                     <Skeleton className="h-4 w-24" />
                   </TableCell>
-                  
+
                   {/* SKS */}
                   <TableCell>
                     <Skeleton className="h-6 w-12 rounded-full" />
                   </TableCell>
-                  
+
                   {/* Jadwal */}
                   <TableCell>
                     <Skeleton className="h-3 w-16 mb-1" />
                     <Skeleton className="h-3 w-20" />
                   </TableCell>
-                  
+
                   {/* Ruang */}
                   <TableCell>
                     <Skeleton className="h-4 w-12" />
                   </TableCell>
-                  
+
                   {/* Kategori */}
                   <TableCell>
                     <Skeleton className="h-6 w-16 rounded-full" />
                   </TableCell>
-                  
+
                   {/* Actions */}
                   <TableCell>
                     <div className="flex space-x-1">
@@ -126,4 +130,5 @@ export function CourseTableSkeleton({ rows = 5 }: CourseTableSkeletonProps) {
       </CardContent>
     </Card>
   );
-} 
+}
+

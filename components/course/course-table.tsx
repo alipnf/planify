@@ -90,20 +90,22 @@ export function CourseTable() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">
-                  <Checkbox
-                    checked={allSel}
-                    ref={(el) => {
-                      if (el) {
-                        const input = el.querySelector(
-                          'input[type="checkbox"]'
-                        ) as HTMLInputElement;
-                        if (input) {
-                          input.indeterminate = someSel;
+                  <div className="flex items-center justify-center">
+                    <Checkbox
+                      checked={allSel}
+                      ref={(el) => {
+                        if (el) {
+                          const input = el.querySelector(
+                            'input[type="checkbox"]'
+                          ) as HTMLInputElement;
+                          if (input) {
+                            input.indeterminate = someSel;
+                          }
                         }
-                      }
-                    }}
-                    onCheckedChange={handleSelectAll}
-                  />
+                      }}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </div>
                 </TableHead>
                 {groupByCode && displayCourses ? (
                   <TableHead className="w-8"></TableHead>
@@ -129,19 +131,23 @@ export function CourseTable() {
                         className="bg-gray-50 hover:bg-gray-100 cursor-pointer border-b-2"
                         onClick={() => toggleGroup(group.code)}
                       >
-                        <TableCell></TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                          >
-                            {expandedGroups.has(group.code) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </Button>
+                          <div className="flex items-center justify-center"></div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                            >
+                              {expandedGroups.has(group.code) ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
                         </TableCell>
                         <TableCell colSpan={8}>
                           <div className="flex items-center justify-between">
@@ -172,17 +178,21 @@ export function CourseTable() {
                             }
                           >
                             <TableCell>
-                              <Checkbox
-                                checked={selectedCourses.includes(course.id)}
-                                onCheckedChange={(checked) =>
-                                  handleSelectCourse(
-                                    course.id,
-                                    checked as boolean
-                                  )
-                                }
-                              />
+                              <div className="flex items-center justify-center">
+                                <Checkbox
+                                  checked={selectedCourses.includes(course.id)}
+                                  onCheckedChange={(checked) =>
+                                    handleSelectCourse(
+                                      course.id,
+                                      checked as boolean
+                                    )
+                                  }
+                                />
+                              </div>
                             </TableCell>
-                            <TableCell></TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-center"></div>
+                            </TableCell>
                             <TableCell className="font-medium">
                               <div>{course.code}</div>
                               <div className="text-sm text-gray-500">
@@ -251,12 +261,14 @@ export function CourseTable() {
                       }
                     >
                       <TableCell>
-                        <Checkbox
-                          checked={selectedCourses.includes(course.id)}
-                          onCheckedChange={(checked) =>
-                            handleSelectCourse(course.id, checked as boolean)
-                          }
-                        />
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={selectedCourses.includes(course.id)}
+                            onCheckedChange={(checked) =>
+                              handleSelectCourse(course.id, checked as boolean)
+                            }
+                          />
+                        </div>
                       </TableCell>
                       <TableCell className="font-medium">
                         <div>{course.code}</div>
