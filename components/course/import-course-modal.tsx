@@ -23,7 +23,7 @@ import { CategoryBadge } from '@/components/ui/category-badge';
 import { useCoursesStore } from '@/lib/stores/courses';
 
 export function ImportCoursesModal() {
-  const { showImportModal, setShowImportModal, handleImportCourses } =
+  const { showImportModal, setShowImportModal, handleImportCourses, courses } =
     useCoursesStore();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -31,6 +31,7 @@ export function ImportCoursesModal() {
   const [previewData, setPreviewData] = useState<CreateCourseData[] | null>(
     null
   );
+  const [duplicateData, setDuplicateData] = useState<CreateCourseData[]>([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,6 +40,7 @@ export function ImportCoursesModal() {
       if (file.type === 'application/json' || file.name.endsWith('.json')) {
         setSelectedFile(file);
         setPreviewData(null);
+        setDuplicateData([]);
         setValidationErrors([]);
         processFile(file);
       } else {
@@ -70,13 +72,15 @@ export function ImportCoursesModal() {
       }
 
       // Validate and normalize data
-      const { validatedData, errors } = validateImportData(data);
+      const { validatedData, duplicateData, errors } = validateImportData(data);
 
       if (errors.length > 0) {
         setValidationErrors(errors);
         setPreviewData(null);
+        setDuplicateData([]);
       } else {
         setPreviewData(validatedData);
+        setDuplicateData(duplicateData);
         setValidationErrors([]);
       }
     } catch {
@@ -104,7 +108,11 @@ export function ImportCoursesModal() {
 
   const validateImportData = (
     data: unknown
-  ): { validatedData: CreateCourseData[] | null; errors: string[] } => {
+  ): {
+    validatedData: CreateCourseData[] | null;
+    duplicateData: CreateCourseData[];
+    errors: string[];
+  } => {
     const errors: string[] = [];
 
     // Check if data is array or single object
@@ -115,7 +123,7 @@ export function ImportCoursesModal() {
       rawCourses = [data];
     } else {
       errors.push('Format data tidak valid');
-      return { validatedData: null, errors };
+      return { validatedData: null, duplicateData: [], errors };
     }
 
     const validatedCourses: CreateCourseData[] = [];
@@ -207,7 +215,28 @@ export function ImportCoursesModal() {
       errors.push('Tidak ada mata kuliah valid yang ditemukan');
     }
 
-    return { validatedData: validatedCourses, errors };
+    // If there are errors, return early
+    if (errors.length > 0) {
+      return { validatedData: null, duplicateData: [], errors };
+    }
+
+    // Check for duplicates against existing courses
+    const existingCourses = courses.map(
+      (course) => `${course.code}-${course.class}`
+    );
+    const duplicates: CreateCourseData[] = [];
+    const nonDuplicates: CreateCourseData[] = [];
+
+    validatedCourses.forEach((course) => {
+      const courseKey = `${course.code}-${course.class}`;
+      if (existingCourses.includes(courseKey)) {
+        duplicates.push(course);
+      } else {
+        nonDuplicates.push(course);
+      }
+    });
+
+    return { validatedData: nonDuplicates, duplicateData: duplicates, errors };
   };
 
   const handleImport = async () => {
@@ -229,6 +258,7 @@ export function ImportCoursesModal() {
   const handleReset = () => {
     setSelectedFile(null);
     setPreviewData(null);
+    setDuplicateData([]);
     setValidationErrors([]);
     setIsProcessing(false);
     setIsImporting(false);
@@ -319,13 +349,38 @@ export function ImportCoursesModal() {
             </div>
           )}
 
+          {/* Duplicate Data Warning */}
+          {duplicateData.length > 0 && (
+            <div className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
+              <div className="flex items-center space-x-2 mb-2">
+                <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                <span className="font-medium text-yellow-800">
+                  Data Duplikat Ditemukan
+                </span>
+              </div>
+              <p className="text-sm text-yellow-700 mb-2">
+                {duplicateData.length} mata kuliah sudah ada di sistem dan akan
+                dilewati:
+              </p>
+              <div className="max-h-32 overflow-y-auto space-y-1">
+                {duplicateData.map((course, index) => (
+                  <div key={index} className="text-sm text-yellow-600">
+                    • {course.code}-{course.class} - {course.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Preview Data */}
           {previewData && previewData.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center space-x-2 text-green-600">
                 <CheckCircle className="h-5 w-5" />
                 <span className="font-medium">
-                  Berhasil memvalidasi {previewData.length} mata kuliah
+                  {previewData.length} mata kuliah siap diimpor
+                  {duplicateData.length > 0 &&
+                    ` (${duplicateData.length} duplikat dilewati)`}
                 </span>
               </div>
 
@@ -381,6 +436,7 @@ export function ImportCoursesModal() {
                 onClick={() => {
                   setSelectedFile(null);
                   setPreviewData(null);
+                  setDuplicateData([]);
                   setValidationErrors([]);
                 }}
               >
@@ -404,10 +460,20 @@ export function ImportCoursesModal() {
                   <>
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Import {previewData.length} Mata Kuliah
+                    {duplicateData.length > 0 &&
+                      ` (${duplicateData.length} dilewati)`}
                   </>
                 )}
               </Button>
             )}
+
+            {/* Show message when all data is duplicate */}
+            {(!previewData || previewData.length === 0) &&
+              duplicateData.length > 0 && (
+                <div className="text-center text-gray-600 text-sm">
+                  Semua data yang akan diimpor sudah ada di sistem
+                </div>
+              )}
           </div>
         </div>
       </DialogContent>

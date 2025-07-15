@@ -15,6 +15,7 @@ import { useCoursesStore } from '@/lib/stores/courses';
 
 export function CourseFilters() {
   const {
+    courses,
     searchQuery,
     selectedSemester,
     selectedClass,
@@ -86,8 +87,9 @@ export function CourseFilters() {
               <Button
                 variant="outline"
                 onClick={handleExportAll}
+                disabled={courses.length === 0}
                 size="sm"
-                className="h-10 w-full px-3 sm:w-auto"
+                className="h-10 w-full px-3 sm:w-auto disabled:opacity-50"
               >
                 <Upload className="mr-1 h-4 w-4" />
                 Export
