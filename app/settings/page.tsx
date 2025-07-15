@@ -16,109 +16,111 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useSettingsStore } from '@/lib/stores/settings';
+import { useSettingsStore, initializeTempApiKey } from '@/lib/stores/settings';
+import { useEffect } from 'react';
 
 export default function SettingsPage() {
   const {
-    apiSettings,
     savedApiKey,
+    tempApiKey,
     showApiKey,
     isSaving,
     setShowApiKey,
+    setTempApiKey,
     handleSaveApiSettings,
     handleDeleteApiKey,
-    handleApiKeyChange,
   } = useSettingsStore();
+
+  useEffect(() => {
+    initializeTempApiKey();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center space-x-2">
-            <Settings className="h-8 w-8 text-blue-600" />
-            <span>Pengaturan</span>
+      <div className="container mx-auto p-4 md:p-8">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold flex items-center">
+            <Settings className="mr-3 text-blue-600" />
+            Pengaturan
           </h1>
-          <p className="text-gray-600">
-            Konfigurasi API untuk fitur Generator Jadwal AI
+          <p className="text-muted-foreground mt-2">
+            Kelola pengaturan API Key Anda untuk fitur-fitur AI.
           </p>
-        </div>
-
-        <div className="space-y-6">
-          {/* Google AI Studio Info */}
-          <Alert className="border-blue-200 bg-blue-50">
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-3">
-                <p className="font-medium">
-                  Cara Mendapatkan Google AI API Key:
-                </p>
-                <ol className="text-sm space-y-2 ml-4">
-                  <li className="flex items-start">
-                    <span className="font-medium text-blue-600 mr-2">1.</span>
-                    <span>
-                      Kunjungi{' '}
-                      <a
+        </header>
+        <div className="space-y-6 max-w-3xl mx-auto">
+           <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+             <Info className="h-5 w-5 text-blue-600" />
+             <AlertDescription>
+               <div className="space-y-2">
+                 <p className="font-semibold text-blue-900">
+                  Bagaimana Cara Mendapatkan Google AI API Key?
+                 </p>
+                 <ol className="list-decimal list-inside space-y-1 text-sm">
+                   <li className="flex items-start">
+                     <span className="font-medium text-blue-600 mr-2">1.</span>
+                     <span>
+                       Kunjungi{' '}
+                       <a
                         href="https://aistudio.google.com/apikey"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 underline inline-flex items-center"
-                      >
-                        Google AI Studio
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="text-blue-600 hover:text-blue-800 underline inline-flex items-center"
+                       >
+                         Google AI Studio
                         <ExternalLink className="h-3 w-3 ml-1" />
                       </a>{' '}
                       dan masuk dengan akun Google Anda.
-                    </span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="font-medium text-blue-600 mr-2">2.</span>
+                     </span>
+                   </li>
+                   <li className="flex items-start">
+                     <span className="font-medium text-blue-600 mr-2">2.</span>
                     <span>
                       Klik tombol &quot;Create API key&quot; untuk membuat API
                       key baru.
                     </span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="font-medium text-blue-600 mr-2">3.</span>
+                   </li>
+                   <li className="flex items-start">
+                     <span className="font-medium text-blue-600 mr-2">3.</span>
                     <span>Salin API key yang telah dibuat.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="font-medium text-blue-600 mr-2">4.</span>
+                   </li>
+                   <li className="flex items-start">
+                     <span className="font-medium text-blue-600 mr-2">4.</span>
                     <span>Tempel API key di form di bawah ini.</span>
-                  </li>
-                </ol>
+                   </li>
+                 </ol>
                 <p className="text-sm text-blue-700 mt-3">
                   <strong>Catatan:</strong> Google AI Studio menyediakan akses
                   gratis ke model Gemini untuk penggunaan dalam batas tertentu.
                 </p>
-              </div>
-            </AlertDescription>
-          </Alert>
+               </div>
+             </AlertDescription>
+           </Alert>
 
+          {/* API Key Configuration */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Key className="h-5 w-5" />
-                <span>Konfigurasi API</span>
+                <Key className="h-5 w-5 text-blue-600" />
+                <span>Google AI API Key</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* API Key Input */}
+            <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="apiKey">Google AI API Key *</Label>
+                <Label htmlFor="apiKey">API Key</Label>
                 <div className="relative">
                   <Input
                     id="apiKey"
                     type={showApiKey ? 'text' : 'password'}
-                    value={apiSettings.googleAiApiKey}
-                    onChange={(e) => handleApiKeyChange(e.target.value)}
-                    placeholder="Masukkan Google AI API Key Anda..."
+                    placeholder="Masukkan Google AI API Key Anda"
+                    value={tempApiKey}
+                    onChange={(e) => setTempApiKey(e.target.value)}
                     className="pr-10"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowApiKey(!showApiKey)}
                   >
                     {showApiKey ? (
@@ -148,9 +150,7 @@ export default function SettingsPage() {
                 <Button
                   onClick={handleSaveApiSettings}
                   disabled={
-                    isSaving ||
-                    !apiSettings.googleAiApiKey.trim() ||
-                    apiSettings.googleAiApiKey === savedApiKey
+                    isSaving || !tempApiKey.trim() || tempApiKey === savedApiKey
                   }
                 >
                   {isSaving ? (
