@@ -106,7 +106,8 @@ export function AIScheduler() {
 
         // Handle server error
         if (response.status === 500) {
-          setErrorMessage('Server sedang sibuk');
+          setShowApiKeyAlert(true);
+          setErrorMessage(null);
           console.error(
             'Server error generating schedule options:',
             result.details
@@ -134,7 +135,8 @@ export function AIScheduler() {
       );
       setScheduleOptions(mappedOptions);
     } catch (error) {
-      setErrorMessage('Server sedang sibuk');
+      setShowApiKeyAlert(true);
+      setErrorMessage(null);
       console.error('Error generating schedule options:', error);
     } finally {
       setIsGenerating(false);
@@ -207,31 +209,35 @@ export function AIScheduler() {
 
           {errorMessage && (
             <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
               <AlertDescription>{errorMessage}</AlertDescription>
             </Alert>
           )}
 
           {showApiKeyAlert && (
             <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="flex items-center justify-between">
-                <span>
-                  API Gemini belum dikonfigurasi. Harap atur custom API di
-                  halaman pengaturan.
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowApiKeyAlert(false);
-                    router.push('/settings');
-                  }}
-                  className="ml-2"
-                >
-                  <Settings className="mr-1 h-3 w-3" />
-                  Pengaturan
-                </Button>
+              <AlertDescription className="flex items-center">
+                {savedApiKey ? (
+                  <span>Server sedang sibuk</span>
+                ) : (
+                  <>
+                    <span>
+                      Server sedang sibuk, silahkan custom api gemini di
+                      pengaturan.
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        router.push('/settings');
+                        setShowApiKeyAlert(false);
+                      }}
+                      className="ml-auto"
+                    >
+                      <Settings className="mr-1 h-3 w-3" />
+                      Pengaturan
+                    </Button>
+                  </>
+                )}
               </AlertDescription>
             </Alert>
           )}
