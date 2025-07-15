@@ -45,6 +45,12 @@ export function useAuth<T extends FieldValues>({
   const setSubmitting = useAuthStore((state) => state.setSubmitting);
 
   useEffect(() => {
+    return () => {
+      setMessage(null);
+    };
+  }, [setMessage]);
+
+  useEffect(() => {
     setSubmitting(isSubmitting);
   }, [isSubmitting, setSubmitting]);
 
