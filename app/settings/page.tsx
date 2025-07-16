@@ -16,8 +16,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useSettingsStore, initializeTempApiKey } from '@/lib/stores/settings';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function SettingsPage() {
   const {
@@ -31,9 +41,20 @@ export default function SettingsPage() {
     handleDeleteApiKey,
   } = useSettingsStore();
 
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
   useEffect(() => {
     initializeTempApiKey();
   }, []);
+
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    handleDeleteApiKey();
+    setShowDeleteDialog(false);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -139,7 +160,7 @@ export default function SettingsPage() {
                 {savedApiKey && (
                   <Button
                     variant="outline"
-                    onClick={handleDeleteApiKey}
+                    onClick={handleDeleteClick}
                     disabled={isSaving}
                     className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
                   >
@@ -170,6 +191,34 @@ export default function SettingsPage() {
           </Card>
         </div>
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center">
+              <Trash2 className="h-5 w-5 text-red-600 mr-2" />
+              Konfirmasi Penghapusan
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600">
+              Anda akan menghapus API key yang tersimpan. Tindakan ini tidak
+              dapat dibatalkan dan Anda perlu memasukkan ulang API key untuk
+              menggunakan fitur AI.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="hover:bg-gray-100">
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Hapus API Key
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
