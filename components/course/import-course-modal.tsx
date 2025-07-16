@@ -71,17 +71,74 @@ export function ImportCoursesModal() {
         return;
       }
 
-      // Validate and normalize data
-      const { validatedData, duplicateData, errors } = validateImportData(data);
+      // Only accept structured format with type: "planify-courses"
+      if (
+        typeof data === 'object' &&
+        data !== null &&
+        !Array.isArray(data) &&
+        data.type === 'planify-courses' &&
+        Array.isArray(data.data)
+      ) {
+        // Validate required metadata
+        if (typeof data.totalCourses !== 'number') {
+          setValidationErrors([
+            'Format file tidak valid. File ekspor mata kuliah harus memiliki metadata yang lengkap.',
+          ]);
+          setPreviewData(null);
+          return;
+        }
 
-      if (errors.length > 0) {
-        setValidationErrors(errors);
-        setPreviewData(null);
-        setDuplicateData([]);
+        // Validate that the data array contains course objects with required fields
+        const isValidCourseArray = data.data.every((item: unknown) =>
+          isValidCourseObject(item)
+        );
+
+        if (!isValidCourseArray) {
+          setValidationErrors([
+            'Format file tidak valid. Data mata kuliah dalam file tidak memiliki struktur yang benar.',
+          ]);
+          setPreviewData(null);
+          return;
+        }
+
+        // Additional validation - ensure data is not empty
+        if (data.data.length === 0) {
+          setValidationErrors([
+            'File mata kuliah kosong. Pastikan file berisi data mata kuliah yang valid.',
+          ]);
+          setPreviewData(null);
+          return;
+        }
+
+        // Validate that totalCourses matches actual data length
+        if (data.totalCourses !== data.data.length) {
+          setValidationErrors([
+            'Format file tidak valid. Jumlah mata kuliah tidak sesuai dengan data yang ada.',
+          ]);
+          setPreviewData(null);
+          return;
+        }
+
+        // Validate and normalize data
+        const { validatedData, duplicateData, errors } = validateImportData(
+          data.data
+        );
+
+        if (errors.length > 0) {
+          setValidationErrors(errors);
+          setPreviewData(null);
+          setDuplicateData([]);
+        } else {
+          setPreviewData(validatedData);
+          setDuplicateData(duplicateData);
+          setValidationErrors([]);
+        }
       } else {
-        setPreviewData(validatedData);
-        setDuplicateData(duplicateData);
-        setValidationErrors([]);
+        setValidationErrors([
+          'File tidak valid. Pastikan Anda mengimpor file jadwal yang diekspor dari Planify.',
+        ]);
+        setPreviewData(null);
+        return;
       }
     } catch {
       setValidationErrors(['File JSON tidak valid atau rusak']);
@@ -104,6 +161,65 @@ export function ImportCoursesModal() {
     if (typeof value !== 'string') return false;
     const lowercasedValue = value.trim().toLowerCase();
     return lowercasedValue === 'wajib' || lowercasedValue === 'pilihan';
+  };
+
+  // Helper function to validate course object structure
+  const isValidCourseObject = (item: unknown): boolean => {
+    // Check basic structure
+    if (typeof item !== 'object' || item === null) return false;
+
+    // Type assertion after null check
+    const obj = item as Record<string, unknown>;
+
+    // Check for required fields with proper types and values
+    const requiredFields = [
+      'code',
+      'name',
+      'lecturer',
+      'credits',
+      'room',
+      'day',
+      'startTime',
+      'endTime',
+      'semester',
+      'category',
+      'class',
+    ];
+
+    // Ensure all required fields exist
+    for (const field of requiredFields) {
+      if (!(field in obj)) return false;
+    }
+
+    // Validate specific field types and values
+    return (
+      typeof obj.code === 'string' &&
+      obj.code.trim().length >= 3 &&
+      typeof obj.name === 'string' &&
+      obj.name.trim().length >= 3 &&
+      typeof obj.lecturer === 'string' &&
+      obj.lecturer.trim().length >= 2 &&
+      typeof obj.credits === 'number' &&
+      obj.credits >= 1 &&
+      obj.credits <= 20 &&
+      typeof obj.room === 'string' &&
+      obj.room.trim().length >= 1 &&
+      typeof obj.day === 'string' &&
+      obj.day.trim().length >= 1 &&
+      typeof obj.startTime === 'string' &&
+      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(obj.startTime) &&
+      typeof obj.endTime === 'string' &&
+      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(obj.endTime) &&
+      typeof obj.semester === 'string' &&
+      obj.semester.trim().length >= 1 &&
+      typeof obj.category === 'string' &&
+      (obj.category.trim().toLowerCase() === 'wajib' ||
+        obj.category.trim().toLowerCase() === 'pilihan') &&
+      typeof obj.class === 'string' &&
+      obj.class.trim().length >= 1 &&
+      // Ensure no extraneous fields that might indicate it's from another app
+      Object.keys(obj).length <= 12 // Only allow the expected fields + optional id
+    );
   };
 
   const validateImportData = (

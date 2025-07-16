@@ -238,7 +238,7 @@ export const useCoursesStore = create<Store>()(
 
       handleExportAll: () => {
         const state = get();
-        const exportData = state.courses.map((course) => ({
+        const courseData = state.courses.map((course) => ({
           code: course.code,
           name: course.name,
           lecturer: course.lecturer,
@@ -251,6 +251,11 @@ export const useCoursesStore = create<Store>()(
           endTime: course.endTime,
           semester: course.semester,
         }));
+        const exportData = {
+          type: 'planify-courses',
+          totalCourses: state.courses.length,
+          data: courseData,
+        };
         const dataStr = JSON.stringify(exportData, null, 2);
         const dataBlob = new Blob([dataStr], { type: 'application/json' });
 
