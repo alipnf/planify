@@ -69,4 +69,3 @@ export const useAuthStore = create<AuthState>((set) => ({
 if (typeof window !== 'undefined') {
   useAuthStore.getState().initialize();
 }
-

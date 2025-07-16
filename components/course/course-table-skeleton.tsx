@@ -131,4 +131,3 @@ export function CourseTableSkeleton({ rows = 5 }: CourseTableSkeletonProps) {
     </Card>
   );
 }
-

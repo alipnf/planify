@@ -8,3 +8,21 @@ export interface SavedSchedule {
   schedule_data: Course[] | null;
   is_shared: boolean;
 }
+
+export interface SchedulePreferences {
+  targetCredits: number;
+  maxDailyCredits: number;
+  preferredStartTime: string;
+  preferredEndTime: string;
+  offDays: string[];
+  requiredCourses: string[];
+  avoidedCourses: string[];
+}
+
+export interface TimeConflict {
+  courses: [Course, Course];
+  course1: Course;
+  course2: Course;
+  day: string;
+  time: string;
+}

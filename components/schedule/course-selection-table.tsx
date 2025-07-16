@@ -440,4 +440,3 @@ export function CourseSelectionTable() {
     </div>
   );
 }
-

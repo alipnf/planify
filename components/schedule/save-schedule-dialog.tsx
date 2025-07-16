@@ -32,10 +32,14 @@ export function SaveScheduleDialog({
   const [scheduleName, setScheduleName] = useState('');
 
   // Use external props if provided, otherwise use internal hook
-  const isDialogOpen = isOpen !== undefined ? isOpen : createScheduleHook.isDialogOpen;
-  const isSaving = externalIsSaving !== undefined ? externalIsSaving : createScheduleHook.isSaving;
+  const isDialogOpen =
+    isOpen !== undefined ? isOpen : createScheduleHook.isDialogOpen;
+  const isSaving =
+    externalIsSaving !== undefined
+      ? externalIsSaving
+      : createScheduleHook.isSaving;
   const handleConfirmSave = onSave || createScheduleHook.handleConfirmSave;
-  
+
   const handleDialogClose = () => {
     if (isSaving) return;
     if (onClose) {
@@ -81,7 +85,11 @@ export function SaveScheduleDialog({
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={handleDialogClose} disabled={isSaving}>
+          <Button
+            variant="outline"
+            onClick={handleDialogClose}
+            disabled={isSaving}
+          >
             Batal
           </Button>
           <Button

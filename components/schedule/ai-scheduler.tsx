@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import { Course } from '@/lib/interfaces/course';
+import { SchedulePreferences } from '@/lib/interfaces/schedule';
 import { detectTimeConflicts, daysOfWeek } from '@/lib/schedule-utils';
 import { WeeklySchedule } from './weekly-schedule';
 import { Textarea } from '../ui/textarea';
@@ -20,16 +21,6 @@ import { CourseCard } from '../ui/course-card';
 import { useCoursesStore } from '@/lib/stores/courses';
 import { useCreateSchedule } from '@/lib/hooks/use-create-schedule';
 import { useSettingsStore } from '@/lib/stores/settings';
-
-interface SchedulePreferences {
-  targetCredits: number;
-  maxDailyCredits: number;
-  preferredStartTime: string;
-  preferredEndTime: string;
-  offDays: string[];
-  requiredCourses: string[];
-  avoidedCourses: string[];
-}
 
 export function AIScheduler() {
   const { courses } = useCoursesStore();
