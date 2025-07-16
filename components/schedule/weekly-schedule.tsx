@@ -2,7 +2,7 @@ import { Calendar, AlertTriangle, RotateCcw, Save } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Course } from '@/lib/types/course';
+import { Course } from '@/lib/interfaces/course';
 import { daysOfWeek, getCourseColor } from '@/lib/schedule-utils';
 import { formatTimeRange } from '@/lib/course-utils';
 import React from 'react';

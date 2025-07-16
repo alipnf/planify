@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
-import { Course } from '@/lib/types/course';
+import { Course } from '@/lib/interfaces/course';
 import { saveSchedule } from '@/lib/services/schedules';
 import {
   detectTimeConflicts,

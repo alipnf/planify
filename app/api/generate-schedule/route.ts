@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
-import type { Course } from '@/lib/types/course';
+import type { Course } from '@/lib/interfaces/course';
 
 export async function POST(req: NextRequest) {
   const {

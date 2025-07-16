@@ -2,7 +2,7 @@ import { useSavedSchedulesStore } from '@/lib/stores/saved';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CourseCard } from '@/components/ui/course-card';
-import { Course } from '@/lib/types/course';
+import { Course } from '@/lib/interfaces/course';
 
 interface SelectedCourseListProps {
   selectedCourses?: Course[];

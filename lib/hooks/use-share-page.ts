@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMessage } from '@/lib/hooks/use-message';
 import { useUser } from '@/lib/hooks/use-auth';
-import { SavedSchedule } from '@/lib/types/schedule';
+import { SavedSchedule } from '@/lib/interfaces/schedule';
 import { saveSchedule, getSavedSchedules } from '@/lib/services/schedules';
-import { Course } from '@/lib/types/course';
+import { Course } from '@/lib/interfaces/course';
 
 // Helper function to check if two course arrays are the same
 function areCourseArraysEqual(courses1: Course[], courses2: Course[]): boolean {

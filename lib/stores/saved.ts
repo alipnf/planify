@@ -6,8 +6,8 @@ import {
   saveSchedule,
   updateScheduleSharing,
 } from '@/lib/services/schedules';
-import { SavedSchedule } from '@/lib/types/schedule';
-import { Course } from '@/lib/types/course';
+import { SavedSchedule } from '@/lib/interfaces/schedule';
+import { Course } from '@/lib/interfaces/course';
 import { detectTimeConflicts } from '@/lib/schedule-utils';
 
 type SavedSchedulesState = {

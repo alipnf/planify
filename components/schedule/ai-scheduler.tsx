@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
-import { Course } from '@/lib/types/course';
+import { Course } from '@/lib/interfaces/course';
 import { detectTimeConflicts, daysOfWeek } from '@/lib/schedule-utils';
 import { WeeklySchedule } from './weekly-schedule';
 import { Textarea } from '../ui/textarea';

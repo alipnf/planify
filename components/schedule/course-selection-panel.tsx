@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Course } from '@/lib/types/course';
+import { Course } from '@/lib/interfaces/course';
 import { formatTimeRange } from '@/lib/course-utils';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';

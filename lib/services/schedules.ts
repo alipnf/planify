@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
-import { Course } from '@/lib/types/course';
-import { SavedSchedule } from '@/lib/types/schedule';
+import { Course } from '@/lib/interfaces/course';
+import { SavedSchedule } from '@/lib/interfaces/schedule';
 
 const supabase = createClient();
 

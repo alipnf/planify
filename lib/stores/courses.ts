@@ -8,7 +8,7 @@ import {
   CoursesState,
   CoursesActions,
   GroupedCourses,
-} from '@/lib/types/course';
+} from '@/lib/interfaces/course';
 import * as coursesService from '@/lib/services/courses';
 import {
   filterCourses,

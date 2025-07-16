@@ -1,4 +1,4 @@
-import { Course } from '@/lib/types/course';
+import { Course } from '@/lib/interfaces/course';
 
 export interface SavedSchedule {
   id: string;

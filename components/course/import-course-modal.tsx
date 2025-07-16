@@ -17,7 +17,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { CreateCourseData } from '@/lib/types/course';
+import { CreateCourseData } from '@/lib/interfaces/course';
 import { formatTimeRange } from '@/lib/course-utils';
 import { CategoryBadge } from '@/components/ui/category-badge';
 import { useCoursesStore } from '@/lib/stores/courses';

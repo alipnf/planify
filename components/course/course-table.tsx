@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Course } from '@/lib/types/course';
+import { Course } from '@/lib/interfaces/course';
 import { getFullCourseCode, formatTimeRange } from '@/lib/course-utils';
 import { CategoryBadge } from '@/components/ui/category-badge';
 import { useCoursesStore } from '@/lib/stores/courses';

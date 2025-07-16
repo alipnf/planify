@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, FileText, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Course } from '@/lib/types/course';
+import { Course } from '@/lib/interfaces/course';
 import { CourseCard } from '@/components/ui/course-card';
 import { useSavedSchedulesStore } from '@/lib/stores/saved';
 import { z } from 'zod';

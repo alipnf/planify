@@ -3,7 +3,7 @@ import {
   Course,
   CreateCourseData,
   CourseFromSupabase,
-} from '@/lib/types/course';
+} from '@/lib/interfaces/course';
 
 const supabase = createClient();
 

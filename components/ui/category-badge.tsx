@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import type { Course } from '@/lib/types/course';
+import type { Course } from '@/lib/interfaces/course';
 import { cn } from '@/lib/utils';
 
 interface CategoryBadgeProps {

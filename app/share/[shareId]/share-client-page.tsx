@@ -16,7 +16,7 @@ import { SaveScheduleDialog } from '@/components/schedule/save-schedule-dialog';
 import { SelectedCourseList } from '@/components/saved/selected-course-list';
 import { useSharePage } from '@/lib/hooks/use-share-page';
 import { detectTimeConflicts } from '@/lib/schedule-utils';
-import { SavedSchedule } from '@/lib/types/schedule';
+import { SavedSchedule } from '@/lib/interfaces/schedule';
 
 export function ShareClientPage({ schedule }: { schedule: SavedSchedule }) {
   const {

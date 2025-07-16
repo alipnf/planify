@@ -1,4 +1,4 @@
-import { Course } from '@/lib/types/course';
+import { Course } from '@/lib/interfaces/course';
 import { Badge } from '@/components/ui/badge';
 import { CategoryBadge } from '@/components/ui/category-badge';
 import { formatTimeRange } from '@/lib/course-utils';

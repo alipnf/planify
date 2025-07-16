@@ -17,8 +17,8 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
-import type { SavedSchedule } from '@/lib/types/schedule';
-import type { Course } from '@/lib/types/course';
+import type { SavedSchedule } from '@/lib/interfaces/schedule';
+import type { Course } from '@/lib/interfaces/course';
 import { useSavedSchedulesStore } from '@/lib/stores/saved';
 import { cn } from '@/lib/utils';
 
