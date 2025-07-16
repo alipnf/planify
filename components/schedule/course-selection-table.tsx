@@ -110,7 +110,7 @@ export function CourseSelectionTable() {
       );
       setExpandedGroups(allGroupCodes);
     }
-  }, [groupedCourses.length]);
+  }, [groupedCourses, expandedGroups.size]);
 
   const toggleGroup = (semester: string, code: string) => {
     const groupKey = `${semester}-${code}`;

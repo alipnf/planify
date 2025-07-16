@@ -8,7 +8,7 @@ export function useSavedSchedules() {
 
   useEffect(() => {
     store.loadSchedules();
-  }, [store.loadSchedules]);
+  }, [store]);
 
   return store;
 }

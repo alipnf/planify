@@ -6,7 +6,7 @@ export function useCourses() {
 
   useEffect(() => {
     store.loadCourses();
-  }, [store.loadCourses]);
+  }, [store]);
 
   return store;
 }

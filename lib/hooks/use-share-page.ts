@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMessage } from '@/lib/hooks/use-message';
 import { useUser } from '@/lib/hooks/use-auth';
@@ -32,14 +32,7 @@ export function useSharePage(schedule: SavedSchedule) {
   const [existingSchedule, setExistingSchedule] =
     useState<SavedSchedule | null>(null);
 
-  // Check if schedule already exists when user is loaded
-  useEffect(() => {
-    if (user && schedule.schedule_data) {
-      checkIfScheduleExists();
-    }
-  }, [user, schedule.schedule_data]);
-
-  const checkIfScheduleExists = async () => {
+  const checkIfScheduleExists = useCallback(async () => {
     if (!user || !schedule.schedule_data) return;
 
     setIsCheckingExisting(true);
@@ -81,7 +74,14 @@ export function useSharePage(schedule: SavedSchedule) {
     } finally {
       setIsCheckingExisting(false);
     }
-  };
+  }, [user, schedule.schedule_data, schedule.schedule_name]);
+
+  // Check if schedule already exists when user is loaded
+  useEffect(() => {
+    if (user && schedule.schedule_data) {
+      checkIfScheduleExists();
+    }
+  }, [user, schedule.schedule_data, checkIfScheduleExists]);
 
   const handleSaveClick = () => {
     if (!user) {
