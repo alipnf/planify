@@ -107,7 +107,6 @@ export const useSavedSchedulesStore = create<SavedSchedulesState>(
     handleExport: (schedule) => {
       const exportData = {
         type: 'planify-schedule',
-        version: 1,
         scheduleName: schedule.schedule_name,
         data: schedule.schedule_data,
       };

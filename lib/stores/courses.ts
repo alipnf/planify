@@ -7,6 +7,7 @@ import {
   CreateCourseData,
   CoursesState,
   CoursesActions,
+  GroupedCourses,
 } from '@/lib/types/course';
 import * as coursesService from '@/lib/services/courses';
 import {
@@ -36,9 +37,7 @@ type Store = Omit<
 > &
   CoursesActions & {
     filteredCourses: () => Course[];
-    groupedCourses: () =>
-      | { code: string; courses: Course[]; totalClasses: number }[]
-      | null;
+    groupedCourses: () => GroupedCourses;
     availableClasses: () => string[];
     selectedCourseNames: () => string[];
     allSelected: () => boolean;
@@ -58,7 +57,6 @@ export const useCoursesStore = create<Store>()(
       showImportModal: false,
       selectedSemester: 'all',
       selectedClass: 'all',
-      groupByCode: false,
       isLoading: true,
       isSaving: false,
       isDeleting: false,
@@ -79,15 +77,38 @@ export const useCoursesStore = create<Store>()(
       },
       groupedCourses: () => {
         const state = get();
-        if (!state.groupByCode) return null;
-        const grouped = groupCoursesByCode(state.filteredCourses());
-        return Object.entries(grouped)
-          .map(([code, coursesInGroup]) => ({
-            code,
-            courses: sortCourseClasses(coursesInGroup),
-            totalClasses: coursesInGroup.length,
-          }))
-          .sort((a, b) => a.code.localeCompare(b.code));
+
+        // First group by semester
+        const semesterGroups: Record<string, Course[]> = state
+          .filteredCourses()
+          .reduce((groups: Record<string, Course[]>, course) => {
+            const semester = course.semester;
+            if (!groups[semester]) {
+              groups[semester] = [];
+            }
+            groups[semester].push(course);
+            return groups;
+          }, {});
+
+        // Then for each semester, group by code
+        return Object.entries(semesterGroups)
+          .map(([semester, coursesInSemester]) => {
+            const groupedByCode = groupCoursesByCode(coursesInSemester);
+            const codeGroups = Object.entries(groupedByCode)
+              .map(([code, coursesInGroup]) => ({
+                code,
+                courses: sortCourseClasses(coursesInGroup),
+                totalClasses: coursesInGroup.length,
+              }))
+              .sort((a, b) => a.code.localeCompare(b.code));
+
+            return {
+              semester,
+              codeGroups,
+              totalCourses: coursesInSemester.length,
+            };
+          })
+          .sort((a, b) => a.semester.localeCompare(b.semester));
       },
       availableClasses: () => {
         const state = get();
@@ -124,13 +145,11 @@ export const useCoursesStore = create<Store>()(
       loadCourses: async (forceRefresh = false) => {
         const state = get();
 
-        // Jika sudah ada data dan tidak force refresh, skip API call
         if (!forceRefresh && state.courses.length > 0) {
           set({ isLoading: false });
           return;
         }
 
-        // Jika force refresh, hapus dari cache dulu
         if (forceRefresh) {
           useCoursesStore.persist.clearStorage();
         }
@@ -138,7 +157,6 @@ export const useCoursesStore = create<Store>()(
         set({ isLoading: true });
         try {
           const data = await coursesService.getAllCourses();
-          // Transform courses untuk menggunakan deterministic ID dan remove sensitive data
           const sanitizedCourses = data.map((course) => ({
             id: generateCourseId(course), // Consistent deterministic ID
             code: course.code,
@@ -353,19 +371,15 @@ export const useCoursesStore = create<Store>()(
       setSearchQuery: (query) => set({ searchQuery: query }),
       setSelectedSemester: (semester) => set({ selectedSemester: semester }),
       setSelectedClass: (classValue) => set({ selectedClass: classValue }),
-      setGroupByCode: (group) => set({ groupByCode: group }),
       setShowCourseModal: (show) => set({ showCourseModal: show }),
       setShowImportModal: (show) => set({ showImportModal: show }),
       setShowDeleteDialog: (show) => set({ showDeleteDialog: show }),
       setShowBulkDeleteDialog: (show) => set({ showBulkDeleteDialog: show }),
     }),
     {
-      name: 'planify-courses-store', // Key untuk localStorage
+      name: 'planify-courses-store',
       storage: createJSONStorage(() => localStorage),
-      // ALTERNATIF untuk privacy lebih baik:
-      // storage: createJSONStorage(() => sessionStorage), // Data hilang saat tab ditutup
       partialize: (state) => ({
-        // Hanya persist data courses tanpa metadata sensitif
         courses: state.courses.map((course) => ({
           id: generateCourseId(course), // Generate deterministic ID
           code: course.code,
@@ -381,14 +395,10 @@ export const useCoursesStore = create<Store>()(
           class: course.class,
           // Exclude: user_id, created_at, updated_at (data sensitif)
         })),
-        // UI preferences tetap di-persist (aman)
         selectedSemester: state.selectedSemester,
         selectedClass: state.selectedClass,
-        groupByCode: state.groupByCode,
       }),
-      version: 1, // Version untuk migration jika diperlukan di masa depan
       onRehydrateStorage: () => {
-        // Callback yang dipanggil saat hydration selesai
         return (state) => {
           if (state) {
             // Jika ada data dari persist, set loading = false

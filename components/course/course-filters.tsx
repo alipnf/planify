@@ -9,8 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { useCoursesStore } from '@/lib/stores/courses';
 
 export function CourseFilters() {
@@ -19,12 +17,10 @@ export function CourseFilters() {
     searchQuery,
     selectedSemester,
     selectedClass,
-    groupByCode,
     availableClasses,
     setSearchQuery,
     setSelectedSemester,
     setSelectedClass,
-    setGroupByCode,
     handleExportAll,
     setShowImportModal,
     handleAddCourse,
@@ -111,23 +107,6 @@ export function CourseFilters() {
                 <Plus className="mr-1 h-4 w-4" />
                 Tambah
               </Button>
-            </div>
-          </div>
-
-          {/* View Options Row */}
-          <div className="flex items-center pt-2 border-t border-gray-100">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="group-by-code"
-                checked={groupByCode}
-                onCheckedChange={setGroupByCode}
-              />
-              <Label
-                htmlFor="group-by-code"
-                className="text-sm font-medium text-gray-700"
-              >
-                Kelompokkan berdasarkan kode mata kuliah
-              </Label>
             </div>
           </div>
         </div>
