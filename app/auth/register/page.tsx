@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { Mail, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -11,7 +12,7 @@ import { FormField } from '@/components/ui/form-field';
 import { registerSchema, type RegisterFormData } from '@/lib/schemas/auth';
 import { AuthError } from '@supabase/supabase-js';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const {
     register,
     handleSubmit,
@@ -109,5 +110,30 @@ export default function RegisterPage() {
         </Button>
       </form>
     </AuthLayout>
+  );
+}
+
+// Loading fallback component for register page
+function RegisterLoading() {
+  return (
+    <AuthLayout
+      title="Daftar ke Planify"
+      subtitle="Mulai kelola jadwal kuliah Anda dengan mudah"
+      footerText="Sudah punya akun?"
+      footerLinkText="Masuk di sini"
+      footerLinkHref="/auth/login"
+    >
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    </AuthLayout>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<RegisterLoading />}>
+      <RegisterForm />
+    </Suspense>
   );
 }

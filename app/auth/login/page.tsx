@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MessageDisplay } from '@/components/ui/message-display';
@@ -10,7 +11,7 @@ import { FormField } from '@/components/ui/form-field';
 import { loginSchema, type LoginFormData } from '@/lib/schemas/auth';
 import { useAuth } from '@/lib/hooks/use-auth';
 
-export default function LoginPage() {
+function LoginForm() {
   const {
     register,
     handleSubmit,
@@ -87,5 +88,30 @@ export default function LoginPage() {
         </Button>
       </form>
     </AuthLayout>
+  );
+}
+
+// Loading fallback component for login page
+function LoginLoading() {
+  return (
+    <AuthLayout
+      title="Masuk ke Planify"
+      subtitle="Kelola jadwal kuliah Anda dengan mudah"
+      footerText="Belum punya akun?"
+      footerLinkText="Daftar di sini"
+      footerLinkHref="/auth/register"
+    >
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    </AuthLayout>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginLoading />}>
+      <LoginForm />
+    </Suspense>
   );
 }
