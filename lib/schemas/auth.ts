@@ -8,15 +8,15 @@ export const authValidation = {
     .email('Format email tidak valid'),
   password: z
     .string()
-    .min(1, 'Password harus diisi')
-    .min(6, 'Password minimal 6 karakter')
-    .max(100, 'Password maksimal 100 karakter'),
+    .min(1, 'Kata sandi harus diisi')
+    .min(6, 'Kata sandi minimal 6 karakter')
+    .max(100, 'Kata sandi maksimal 100 karakter'),
   name: z
     .string()
     .min(1, 'Nama harus diisi')
     .min(2, 'Nama minimal 2 karakter')
     .max(50, 'Nama maksimal 50 karakter'),
-  confirmPassword: z.string().min(1, 'Konfirmasi password harus diisi'),
+  confirmPassword: z.string().min(1, 'Konfirmasi kata sandi harus diisi'),
 };
 
 // Login schema
@@ -34,7 +34,7 @@ export const registerSchema = z
     confirmPassword: authValidation.confirmPassword,
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Konfirmasi password tidak sama dengan password',
+    message: 'Konfirmasi kata sandi tidak sama dengan kata sandi',
     path: ['confirmPassword'],
   });
 
