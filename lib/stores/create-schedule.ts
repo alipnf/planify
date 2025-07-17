@@ -8,6 +8,7 @@ import {
   calculateScheduleStats,
 } from '@/lib/schedule-utils';
 import { useCoursesStore } from '@/lib/stores/courses';
+import { useSavedSchedulesStore } from '@/lib/stores/saved';
 
 interface ScheduleOptionView {
   id: number;
@@ -202,6 +203,7 @@ export const useCreateScheduleStore = create<CreateScheduleState>()(
           await saveSchedule(scheduleName, get().selectedCourses);
           toast.success(`Jadwal "${scheduleName}" berhasil disimpan.`);
           set({ isDialogOpen: false });
+          useSavedSchedulesStore.getState().loadSchedules(true);
         } catch (error) {
           const errorMessage =
             error instanceof Error
