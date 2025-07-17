@@ -60,7 +60,6 @@ export function GoogleSignInButton({
   className = 'w-full mb-4',
 }: GoogleSignInButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const isSubmitting = useAuthStore((state) => state.isSubmitting);
   const setMessage = useAuthStore((state) => state.setMessage);
   const searchParams = useSearchParams();
 
@@ -100,17 +99,15 @@ export function GoogleSignInButton({
     }
   };
 
-  const isButtonLoading = isLoading || isSubmitting;
-
   return (
     <Button
       onClick={handleGoogleSignIn}
-      disabled={isButtonLoading}
+      disabled={isLoading}
       variant="outline"
       className={className}
     >
-      {isButtonLoading ? <Spinner /> : <GoogleIcon />}
-      {isButtonLoading ? loadingText : text}
+      {isLoading ? <Spinner /> : <GoogleIcon />}
+      {isLoading ? loadingText : text}
     </Button>
   );
 }
