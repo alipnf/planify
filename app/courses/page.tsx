@@ -7,7 +7,8 @@ import { CourseTable } from '@/components/course/course-table';
 import { CourseEmptyState } from '@/components/course/course-empty-state';
 import { CourseDeleteDialogs } from '@/components/course/course-delete-dialogs';
 import { CourseTableSkeleton } from '@/components/course/course-table-skeleton';
-import { useCourses } from '@/lib/hooks/use-courses';
+import { useCoursesStore } from '@/lib/stores/courses';
+import { useEffect } from 'react';
 
 export default function CoursesPage() {
   const {
@@ -16,11 +17,16 @@ export default function CoursesPage() {
     isLoading,
     filteredCourses,
     hasFilters,
-  } = useCourses();
+    loadCourses,
+  } = useCoursesStore();
 
   // Call computed functions
   const coursesList = filteredCourses();
   const hasFil = hasFilters();
+
+  useEffect(() => {
+    loadCourses();
+  }, [loadCourses]);
 
   return (
     <>
