@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import {
   Wand2,
   Loader2,
@@ -23,6 +24,7 @@ import { useCreateSchedule } from '@/lib/hooks/use-create-schedule';
 import { useSettingsStore } from '@/lib/stores/settings';
 
 export function AIScheduler() {
+  const previewRef = useRef<HTMLDivElement>(null);
   const { courses } = useCoursesStore();
   const { savedApiKey } = useSettingsStore();
   const {
@@ -149,6 +151,7 @@ export function AIScheduler() {
   }) => {
     setPreviewCourses(option.courses);
     setSelectedOptionId(option.id);
+    previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const previewConflicts = detectTimeConflicts(previewCourses);
@@ -368,7 +371,11 @@ export function AIScheduler() {
           </div>
 
           {/* Right Column - Schedule Preview */}
-          <div className="space-y-4">
+          <div
+            className="space-y-4"
+            ref={previewRef}
+            style={{ scrollMarginTop: '96px' }}
+          >
             <h3 className="text-lg font-semibold">
               Pratinjau Jadwal
               {selectedOptionId && (
