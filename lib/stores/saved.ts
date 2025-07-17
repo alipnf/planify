@@ -36,6 +36,7 @@ type SavedSchedulesState = {
   handleExport: (schedule: SavedSchedule) => void;
   handleShareClick: (schedule: SavedSchedule) => Promise<void>;
   handleImport: (name: string, courses: Course[]) => Promise<void>;
+  clearActiveSchedule: () => void;
 };
 
 export const useSavedSchedulesStore = create<SavedSchedulesState>(
@@ -159,6 +160,9 @@ export const useSavedSchedulesStore = create<SavedSchedulesState>(
       } finally {
         set({ showImportDialog: false });
       }
+    },
+    clearActiveSchedule: () => {
+      set({ activeSchedule: null });
     },
   })
 );

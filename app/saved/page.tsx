@@ -39,11 +39,15 @@ export default function SavedSchedulesPage() {
     handleConfirmDelete,
     closePreview,
     loadSchedules,
+    clearActiveSchedule,
   } = useSavedSchedulesStore();
 
   useEffect(() => {
     loadSchedules();
-  }, [loadSchedules]);
+    return () => {
+      clearActiveSchedule();
+    };
+  }, [loadSchedules, clearActiveSchedule]);
 
   useEffect(() => {
     if (activeSchedule) {
