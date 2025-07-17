@@ -3,7 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Hand, Bot } from 'lucide-react';
 import { WeeklySchedule } from '@/components/schedule/weekly-schedule';
-import { CourseSelectionPanel } from '@/components/schedule/course-selection-panel';
+import { CourseSelectionTable } from '@/components/schedule/course-selection-table';
 import { AIScheduler } from '@/components/schedule/ai-scheduler';
 import { SaveScheduleDialog } from '@/components/schedule/save-schedule-dialog';
 import { useCreateSchedule } from '@/lib/hooks/use-create-schedule';
@@ -27,11 +27,17 @@ export default function CreateSchedulePage() {
           className="space-y-6"
         >
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="manual" className="flex items-center space-x-2">
+            <TabsTrigger
+              value="manual"
+              className="flex items-center space-x-2 cursor-pointer"
+            >
               <Hand className="h-4 w-4" />
               <span>Manual</span>
             </TabsTrigger>
-            <TabsTrigger value="ai" className="flex items-center space-x-2">
+            <TabsTrigger
+              value="ai"
+              className="flex items-center space-x-2 cursor-pointer"
+            >
               <Bot className="h-4 w-4" />
               <span>AI</span>
             </TabsTrigger>
@@ -39,11 +45,10 @@ export default function CreateSchedulePage() {
 
           <TabsContent value="manual" className="space-y-6">
             <div className="flex flex-col space-y-6">
-              <div className="lg:col-span-1">
-                <CourseSelectionPanel />
-              </div>
-
               <WeeklySchedule />
+              <div className="lg:col-span-1">
+                <CourseSelectionTable />
+              </div>
             </div>
           </TabsContent>
 

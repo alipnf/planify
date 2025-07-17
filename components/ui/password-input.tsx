@@ -12,7 +12,7 @@ interface PasswordInputProps extends React.ComponentProps<typeof Input> {
 }
 
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
-  ({ label, placeholder = "••••••••", error, ...props }, ref) => {
+  ({ label, placeholder = '••••••••', error, ...props }, ref) => {
     const { isVisible, toggle, type } = usePasswordToggle();
 
     return (
@@ -47,4 +47,4 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
   }
 );
 
-PasswordInput.displayName = "PasswordInput"; 
+PasswordInput.displayName = 'PasswordInput';

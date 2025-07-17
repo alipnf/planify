@@ -20,7 +20,7 @@ import { ShareDialog } from '@/components/saved/share-dialog';
 import { EmptyState } from '@/components/saved/empty-state';
 import { ScheduleGrid } from '@/components/saved/schedule-grid';
 import { SelectedCourseList } from '@/components/saved/selected-course-list';
-import { useSavedSchedules } from '@/lib/hooks/use-saved-schedules';
+import { useSavedSchedulesStore } from '@/lib/stores/saved';
 
 export default function SavedSchedulesPage() {
   const previewRef = useRef<HTMLDivElement>(null);
@@ -38,7 +38,16 @@ export default function SavedSchedulesPage() {
     setShowImportDialog,
     handleConfirmDelete,
     closePreview,
-  } = useSavedSchedules();
+    loadSchedules,
+    clearActiveSchedule,
+  } = useSavedSchedulesStore();
+
+  useEffect(() => {
+    loadSchedules();
+    return () => {
+      clearActiveSchedule();
+    };
+  }, [loadSchedules, clearActiveSchedule]);
 
   useEffect(() => {
     if (activeSchedule) {

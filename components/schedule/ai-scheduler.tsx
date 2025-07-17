@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import {
   Wand2,
   Loader2,
@@ -5,42 +6,48 @@ import {
   CheckCircle,
   Eye,
   Save,
+  Settings,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
-import { useState } from 'react';
-import { Course } from '@/lib/types/course';
+import { useRouter } from 'next/navigation';
+import { Course } from '@/lib/interfaces/course';
+import { SchedulePreferences } from '@/lib/interfaces/schedule';
 import { detectTimeConflicts, daysOfWeek } from '@/lib/schedule-utils';
-import { formatTimeRange } from '@/lib/course-utils';
 import { WeeklySchedule } from './weekly-schedule';
 import { Textarea } from '../ui/textarea';
-import { CategoryBadge } from '../ui/category-badge';
+import { CourseCard } from '../ui/course-card';
 import { useCoursesStore } from '@/lib/stores/courses';
 import { useCreateSchedule } from '@/lib/hooks/use-create-schedule';
 import { useSettingsStore } from '@/lib/stores/settings';
 
-interface SchedulePreferences {
-  targetCredits: number;
-  maxDailyCredits: number;
-  preferredStartTime: string;
-  preferredEndTime: string;
-  offDays: string[];
-  requiredCourses: string[];
-  avoidedCourses: string[];
-}
-
-interface ScheduleOptionView {
-  id: number;
-  courses: Course[];
-  totalCredits: number;
-}
-
 export function AIScheduler() {
+  const previewRef = useRef<HTMLDivElement>(null);
   const { courses } = useCoursesStore();
   const { savedApiKey } = useSettingsStore();
-  const { handleAIEdit, handleAISave } = useCreateSchedule();
+  const {
+    handleAIEdit,
+    handleAISave,
+    // AI state from store
+    aiPrompt,
+    isGenerating,
+    scheduleOptions,
+    selectedOptionId,
+    previewCourses,
+    errorMessage,
+    showApiKeyAlert,
+    // AI actions from store
+    setAiPrompt,
+    setIsGenerating,
+    setScheduleOptions,
+    setSelectedOptionId,
+    setPreviewCourses,
+    setErrorMessage,
+    setShowApiKeyAlert,
+  } = useCreateSchedule();
+  const router = useRouter();
 
   const preferences: SchedulePreferences = {
     targetCredits: 20,
@@ -51,15 +58,6 @@ export function AIScheduler() {
     requiredCourses: [],
     avoidedCourses: [],
   };
-
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [scheduleOptions, setScheduleOptions] = useState<ScheduleOptionView[]>(
-    []
-  );
-  const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
-  const [previewCourses, setPreviewCourses] = useState<Course[]>([]);
-  const [prompt, setPrompt] = useState('');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Generate schedule options via Gemini API
   const generateScheduleOptions = async () => {
@@ -81,7 +79,7 @@ export function AIScheduler() {
         body: JSON.stringify({
           courses,
           preferences,
-          userPrompt: prompt,
+          userPrompt: aiPrompt,
           apiKey,
         }),
       });
@@ -89,6 +87,28 @@ export function AIScheduler() {
       const result = await response.json();
 
       if (!response.ok) {
+        // Handle API key not configured error
+        if (
+          response.status === 400 &&
+          result.error?.includes('API key tidak dikonfigurasi')
+        ) {
+          setShowApiKeyAlert(true);
+          setErrorMessage(null);
+          return;
+        }
+
+        // Handle server error
+        if (response.status === 500) {
+          setShowApiKeyAlert(true);
+          setErrorMessage(null);
+          console.error(
+            'Server error generating schedule options:',
+            result.details
+          );
+          return;
+        }
+
+        // Handle other errors
         setErrorMessage(
           result.error || 'Terjadi kesalahan saat membuat jadwal.'
         );
@@ -96,7 +116,7 @@ export function AIScheduler() {
         return;
       }
       const schedules = result.options as Course[][];
-      const mappedOptions: ScheduleOptionView[] = schedules.map(
+      const mappedOptions = schedules.map(
         (courseArr: Course[], index: number) => ({
           id: index + 1,
           courses: courseArr,
@@ -108,7 +128,8 @@ export function AIScheduler() {
       );
       setScheduleOptions(mappedOptions);
     } catch (error) {
-      setErrorMessage('Gagal terhubung ke server. Silakan coba lagi.');
+      setShowApiKeyAlert(true);
+      setErrorMessage(null);
       console.error('Error generating schedule options:', error);
     } finally {
       setIsGenerating(false);
@@ -123,9 +144,14 @@ export function AIScheduler() {
     });
   };
 
-  const handlePreviewOption = (option: ScheduleOptionView) => {
+  const handlePreviewOption = (option: {
+    id: number;
+    courses: Course[];
+    totalCredits: number;
+  }) => {
     setPreviewCourses(option.courses);
     setSelectedOptionId(option.id);
+    previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const previewConflicts = detectTimeConflicts(previewCourses);
@@ -148,8 +174,8 @@ export function AIScheduler() {
               <Textarea
                 id="prompt-input"
                 placeholder="Contoh: 'saya ingin kelas dimulai jam 8 pagi, hindari kelas di hari jumat, prioritaskan mata kuliah wajib, target 20 SKS, lebih suka lab komputer'"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
                 rows={4}
               />
             </div>
@@ -158,7 +184,7 @@ export function AIScheduler() {
           <Button
             onClick={generateScheduleOptions}
             disabled={
-              isGenerating || courses.length === 0 || prompt.trim() === ''
+              isGenerating || courses.length === 0 || aiPrompt.trim() === ''
             }
             className="w-full"
           >
@@ -177,8 +203,36 @@ export function AIScheduler() {
 
           {errorMessage && (
             <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
               <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+
+          {showApiKeyAlert && (
+            <Alert variant="destructive">
+              <AlertDescription className="flex items-center">
+                {savedApiKey ? (
+                  <span>Server sedang sibuk</span>
+                ) : (
+                  <>
+                    <span>
+                      Server sedang sibuk, silahkan custom api gemini di
+                      pengaturan.
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        router.push('/settings');
+                        setShowApiKeyAlert(false);
+                      }}
+                      className="ml-auto"
+                    >
+                      <Settings className="mr-1 h-3 w-3" />
+                      Pengaturan
+                    </Button>
+                  </>
+                )}
+              </AlertDescription>
             </Alert>
           )}
 
@@ -191,7 +245,6 @@ export function AIScheduler() {
               & Simpan&quot; untuk menyimpan.
             </AlertDescription>
           </Alert>
-          {/* Debug UI removed */}
         </CardContent>
       </Card>
 
@@ -268,33 +321,20 @@ export function AIScheduler() {
                     })()}
 
                     {/* Course List */}
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                    <div className="space-y-3 max-h-40 overflow-y-auto">
                       {option.courses.map((course) => (
-                        <div
+                        <CourseCard
                           key={course.id}
-                          className="flex items-center justify-between p-2 bg-white border rounded text-sm"
+                          course={course}
+                          variant="minimal"
+                          className="hover:bg-gray-50"
                         >
-                          <div className="flex-1">
-                            <div className="font-medium">{course.name}</div>
-                            <div className="text-xs text-gray-500">
-                              {course.code} • Kelas {course.class} •{' '}
-                              {course.day} •{' '}
-                              {formatTimeRange(
-                                course.startTime,
-                                course.endTime
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                          <div className="flex items-center justify-end space-x-2 mt-2">
+                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
                               {course.credits} SKS
                             </span>
-                            <CategoryBadge
-                              category={course.category}
-                              className="text-xs"
-                            />
                           </div>
-                        </div>
+                        </CourseCard>
                       ))}
                     </div>
 
@@ -331,7 +371,11 @@ export function AIScheduler() {
           </div>
 
           {/* Right Column - Schedule Preview */}
-          <div className="space-y-4">
+          <div
+            className="space-y-4"
+            ref={previewRef}
+            style={{ scrollMarginTop: '96px' }}
+          >
             <h3 className="text-lg font-semibold">
               Pratinjau Jadwal
               {selectedOptionId && (

@@ -8,21 +8,30 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Upload, FileText, CheckCircle, AlertTriangle, X } from 'lucide-react';
+import {
+  Upload,
+  FileText,
+  CheckCircle,
+  AlertTriangle,
+  X,
+  Loader2,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { CreateCourseData } from '@/lib/types/course';
+import { CreateCourseData } from '@/lib/interfaces/course';
 import { formatTimeRange } from '@/lib/course-utils';
 import { CategoryBadge } from '@/components/ui/category-badge';
 import { useCoursesStore } from '@/lib/stores/courses';
 
 export function ImportCoursesModal() {
-  const { showImportModal, setShowImportModal, handleImportCourses } =
+  const { showImportModal, setShowImportModal, handleImportCourses, courses } =
     useCoursesStore();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [previewData, setPreviewData] = useState<CreateCourseData[] | null>(
     null
   );
+  const [duplicateData, setDuplicateData] = useState<CreateCourseData[]>([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,6 +40,7 @@ export function ImportCoursesModal() {
       if (file.type === 'application/json' || file.name.endsWith('.json')) {
         setSelectedFile(file);
         setPreviewData(null);
+        setDuplicateData([]);
         setValidationErrors([]);
         processFile(file);
       } else {
@@ -61,15 +71,74 @@ export function ImportCoursesModal() {
         return;
       }
 
-      // Validate and normalize data
-      const { validatedData, errors } = validateImportData(data);
+      // Only accept structured format with type: "planify-courses"
+      if (
+        typeof data === 'object' &&
+        data !== null &&
+        !Array.isArray(data) &&
+        data.type === 'planify-courses' &&
+        Array.isArray(data.data)
+      ) {
+        // Validate required metadata
+        if (typeof data.totalCourses !== 'number') {
+          setValidationErrors([
+            'Format file tidak valid. File ekspor mata kuliah harus memiliki metadata yang lengkap.',
+          ]);
+          setPreviewData(null);
+          return;
+        }
 
-      if (errors.length > 0) {
-        setValidationErrors(errors);
-        setPreviewData(null);
+        // Validate that the data array contains course objects with required fields
+        const isValidCourseArray = data.data.every((item: unknown) =>
+          isValidCourseObject(item)
+        );
+
+        if (!isValidCourseArray) {
+          setValidationErrors([
+            'Format file tidak valid. Data mata kuliah dalam file tidak memiliki struktur yang benar.',
+          ]);
+          setPreviewData(null);
+          return;
+        }
+
+        // Additional validation - ensure data is not empty
+        if (data.data.length === 0) {
+          setValidationErrors([
+            'File mata kuliah kosong. Pastikan file berisi data mata kuliah yang valid.',
+          ]);
+          setPreviewData(null);
+          return;
+        }
+
+        // Validate that totalCourses matches actual data length
+        if (data.totalCourses !== data.data.length) {
+          setValidationErrors([
+            'Format file tidak valid. Jumlah mata kuliah tidak sesuai dengan data yang ada.',
+          ]);
+          setPreviewData(null);
+          return;
+        }
+
+        // Validate and normalize data
+        const { validatedData, duplicateData, errors } = validateImportData(
+          data.data
+        );
+
+        if (errors.length > 0) {
+          setValidationErrors(errors);
+          setPreviewData(null);
+          setDuplicateData([]);
+        } else {
+          setPreviewData(validatedData);
+          setDuplicateData(duplicateData);
+          setValidationErrors([]);
+        }
       } else {
-        setPreviewData(validatedData);
-        setValidationErrors([]);
+        setValidationErrors([
+          'File tidak valid. Pastikan Anda mengimpor file jadwal yang diekspor dari Planify.',
+        ]);
+        setPreviewData(null);
+        return;
       }
     } catch {
       setValidationErrors(['File JSON tidak valid atau rusak']);
@@ -94,9 +163,72 @@ export function ImportCoursesModal() {
     return lowercasedValue === 'wajib' || lowercasedValue === 'pilihan';
   };
 
+  // Helper function to validate course object structure
+  const isValidCourseObject = (item: unknown): boolean => {
+    // Check basic structure
+    if (typeof item !== 'object' || item === null) return false;
+
+    // Type assertion after null check
+    const obj = item as Record<string, unknown>;
+
+    // Check for required fields with proper types and values
+    const requiredFields = [
+      'code',
+      'name',
+      'lecturer',
+      'credits',
+      'room',
+      'day',
+      'startTime',
+      'endTime',
+      'semester',
+      'category',
+      'class',
+    ];
+
+    // Ensure all required fields exist
+    for (const field of requiredFields) {
+      if (!(field in obj)) return false;
+    }
+
+    // Validate specific field types and values
+    return (
+      typeof obj.code === 'string' &&
+      obj.code.trim().length >= 3 &&
+      typeof obj.name === 'string' &&
+      obj.name.trim().length >= 3 &&
+      typeof obj.lecturer === 'string' &&
+      obj.lecturer.trim().length >= 2 &&
+      typeof obj.credits === 'number' &&
+      obj.credits >= 1 &&
+      obj.credits <= 20 &&
+      typeof obj.room === 'string' &&
+      obj.room.trim().length >= 1 &&
+      typeof obj.day === 'string' &&
+      obj.day.trim().length >= 1 &&
+      typeof obj.startTime === 'string' &&
+      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(obj.startTime) &&
+      typeof obj.endTime === 'string' &&
+      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(obj.endTime) &&
+      typeof obj.semester === 'string' &&
+      obj.semester.trim().length >= 1 &&
+      typeof obj.category === 'string' &&
+      (obj.category.trim().toLowerCase() === 'wajib' ||
+        obj.category.trim().toLowerCase() === 'pilihan') &&
+      typeof obj.class === 'string' &&
+      obj.class.trim().length >= 1 &&
+      // Ensure no extraneous fields that might indicate it's from another app
+      Object.keys(obj).length <= 12 // Only allow the expected fields + optional id
+    );
+  };
+
   const validateImportData = (
     data: unknown
-  ): { validatedData: CreateCourseData[] | null; errors: string[] } => {
+  ): {
+    validatedData: CreateCourseData[] | null;
+    duplicateData: CreateCourseData[];
+    errors: string[];
+  } => {
     const errors: string[] = [];
 
     // Check if data is array or single object
@@ -107,7 +239,7 @@ export function ImportCoursesModal() {
       rawCourses = [data];
     } else {
       errors.push('Format data tidak valid');
-      return { validatedData: null, errors };
+      return { validatedData: null, duplicateData: [], errors };
     }
 
     const validatedCourses: CreateCourseData[] = [];
@@ -199,22 +331,53 @@ export function ImportCoursesModal() {
       errors.push('Tidak ada mata kuliah valid yang ditemukan');
     }
 
-    return { validatedData: validatedCourses, errors };
+    // If there are errors, return early
+    if (errors.length > 0) {
+      return { validatedData: null, duplicateData: [], errors };
+    }
+
+    // Check for duplicates against existing courses
+    const existingCourses = courses.map(
+      (course) => `${course.code}-${course.class}`
+    );
+    const duplicates: CreateCourseData[] = [];
+    const nonDuplicates: CreateCourseData[] = [];
+
+    validatedCourses.forEach((course) => {
+      const courseKey = `${course.code}-${course.class}`;
+      if (existingCourses.includes(courseKey)) {
+        duplicates.push(course);
+      } else {
+        nonDuplicates.push(course);
+      }
+    });
+
+    return { validatedData: nonDuplicates, duplicateData: duplicates, errors };
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (previewData && previewData.length > 0) {
-      handleImportCourses(previewData);
-      handleReset();
-      toast.success(`${previewData.length} mata kuliah berhasil diimpor`);
+      setIsImporting(true);
+      try {
+        await handleImportCourses(previewData);
+        // Reset hanya jika berhasil (modal sudah tertutup dari store)
+        handleReset();
+      } catch (error) {
+        // Jangan reset jika ada error, biarkan user melihat data dan bisa retry
+        console.error('Error importing courses:', error);
+      } finally {
+        setIsImporting(false);
+      }
     }
   };
 
   const handleReset = () => {
     setSelectedFile(null);
     setPreviewData(null);
+    setDuplicateData([]);
     setValidationErrors([]);
     setIsProcessing(false);
+    setIsImporting(false);
   };
 
   const handleClose = () => {
@@ -302,13 +465,38 @@ export function ImportCoursesModal() {
             </div>
           )}
 
+          {/* Duplicate Data Warning */}
+          {duplicateData.length > 0 && (
+            <div className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
+              <div className="flex items-center space-x-2 mb-2">
+                <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                <span className="font-medium text-yellow-800">
+                  Data Duplikat Ditemukan
+                </span>
+              </div>
+              <p className="text-sm text-yellow-700 mb-2">
+                {duplicateData.length} mata kuliah sudah ada di sistem dan akan
+                dilewati:
+              </p>
+              <div className="max-h-32 overflow-y-auto space-y-1">
+                {duplicateData.map((course, index) => (
+                  <div key={index} className="text-sm text-yellow-600">
+                    • {course.code}-{course.class} - {course.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Preview Data */}
           {previewData && previewData.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center space-x-2 text-green-600">
                 <CheckCircle className="h-5 w-5" />
                 <span className="font-medium">
-                  Berhasil memvalidasi {previewData.length} mata kuliah
+                  {previewData.length} mata kuliah siap diimpor
+                  {duplicateData.length > 0 &&
+                    ` (${duplicateData.length} duplikat dilewati)`}
                 </span>
               </div>
 
@@ -364,6 +552,7 @@ export function ImportCoursesModal() {
                 onClick={() => {
                   setSelectedFile(null);
                   setPreviewData(null);
+                  setDuplicateData([]);
                   setValidationErrors([]);
                 }}
               >
@@ -375,12 +564,32 @@ export function ImportCoursesModal() {
             {previewData && previewData.length > 0 && (
               <Button
                 onClick={handleImport}
-                className="bg-green-600 hover:bg-green-700"
+                disabled={isImporting}
+                className="bg-primary disabled:opacity-50"
               >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Import {previewData.length} Mata Kuliah
+                {isImporting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Mengimpor...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Import {previewData.length} Mata Kuliah
+                    {duplicateData.length > 0 &&
+                      ` (${duplicateData.length} dilewati)`}
+                  </>
+                )}
               </Button>
             )}
+
+            {/* Show message when all data is duplicate */}
+            {(!previewData || previewData.length === 0) &&
+              duplicateData.length > 0 && (
+                <div className="text-center text-gray-600 text-sm">
+                  Semua data yang akan diimpor sudah ada di sistem
+                </div>
+              )}
           </div>
         </div>
       </DialogContent>

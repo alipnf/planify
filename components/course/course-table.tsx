@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Course } from '@/lib/types/course';
+import { Course } from '@/lib/interfaces/course';
 import { getFullCourseCode, formatTimeRange } from '@/lib/course-utils';
 import { CategoryBadge } from '@/components/ui/category-badge';
 import { useCoursesStore } from '@/lib/stores/courses';
@@ -27,7 +27,6 @@ export function CourseTable() {
     handleBulkDeleteClick,
     allSelected,
     someSelected,
-    groupByCode,
     filteredCourses,
     groupedCourses,
   } = useCoursesStore();
@@ -36,13 +35,11 @@ export function CourseTable() {
 
   // Auto-expand all groups when grouping is first enabled
   React.useEffect(() => {
-    if (groupByCode && groupedCourses()) {
-      const allCodes = new Set(groupedCourses()!.map((group) => group.code));
-      setExpandedGroups(allCodes);
-    } else {
-      setExpandedGroups(new Set());
-    }
-  }, [groupByCode, groupedCourses]);
+    const allGroupCodes = new Set(
+      groupedCourses()?.flatMap((sg) => sg.codeGroups.map((cg) => cg.code))
+    );
+    setExpandedGroups(allGroupCodes);
+  }, [groupedCourses]);
 
   const toggleGroup = (code: string) => {
     const newExpanded = new Set(expandedGroups);
@@ -54,7 +51,7 @@ export function CourseTable() {
     setExpandedGroups(newExpanded);
   };
 
-  const displayCourses = groupByCode ? groupedCourses() : null;
+  const displayCourses = groupedCourses();
   const courseList = filteredCourses();
   const allSel = allSelected();
   const someSel = someSelected();
@@ -78,7 +75,7 @@ export function CourseTable() {
             )}
             <Badge variant="secondary">
               {displayCourses
-                ? `${courseList.length} kelas dalam ${displayCourses.length} mata kuliah`
+                ? `${courseList.length} kelas dalam ${displayCourses.reduce((acc, semesterGroup) => acc + semesterGroup.codeGroups.length, 0)} mata kuliah`
                 : `${courseList.length} kelas dalam ${new Set(courseList.map((c: Course) => c.code)).size} mata kuliah`}
             </Badge>
           </div>
@@ -90,24 +87,24 @@ export function CourseTable() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">
-                  <Checkbox
-                    checked={allSel}
-                    ref={(el) => {
-                      if (el) {
-                        const input = el.querySelector(
-                          'input[type="checkbox"]'
-                        ) as HTMLInputElement;
-                        if (input) {
-                          input.indeterminate = someSel;
+                  <div className="flex items-center justify-center">
+                    <Checkbox
+                      checked={allSel}
+                      ref={(el) => {
+                        if (el) {
+                          const input = el.querySelector(
+                            'input[type="checkbox"]'
+                          ) as HTMLInputElement;
+                          if (input) {
+                            input.indeterminate = someSel;
+                          }
                         }
-                      }
-                    }}
-                    onCheckedChange={handleSelectAll}
-                  />
+                      }}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </div>
                 </TableHead>
-                {groupByCode && displayCourses ? (
-                  <TableHead className="w-8"></TableHead>
-                ) : null}
+                <TableHead className="w-8"></TableHead>
                 <TableHead>Kode</TableHead>
                 <TableHead>Kelas</TableHead>
                 <TableHead>Mata Kuliah</TableHead>
@@ -120,194 +117,170 @@ export function CourseTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {groupByCode && displayCourses
-                ? // Grouped display
-                  displayCourses.map((group) => (
-                    <React.Fragment key={group.code}>
-                      {/* Group header row */}
-                      <TableRow
-                        className="bg-gray-50 hover:bg-gray-100 cursor-pointer border-b-2"
-                        onClick={() => toggleGroup(group.code)}
-                      >
-                        <TableCell></TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                          >
-                            {expandedGroups.has(group.code) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </TableCell>
-                        <TableCell colSpan={8}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <span className="font-semibold text-lg">
-                                {group.code}
-                              </span>
-                              <Badge variant="secondary">
-                                {group.totalClasses} kelas
-                              </Badge>
-                              <span className="text-sm text-gray-600">
-                                {group.courses[0]?.name}
-                              </span>
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-
-                      {/* Group courses (when expanded) */}
-                      {expandedGroups.has(group.code) &&
-                        group.courses.map((course) => (
-                          <TableRow
-                            key={course.id}
-                            className={
-                              selectedCourses.includes(course.id)
-                                ? 'bg-blue-50'
-                                : ''
-                            }
-                          >
-                            <TableCell>
-                              <Checkbox
-                                checked={selectedCourses.includes(course.id)}
-                                onCheckedChange={(checked) =>
-                                  handleSelectCourse(
-                                    course.id,
-                                    checked as boolean
-                                  )
-                                }
-                              />
-                            </TableCell>
-                            <TableCell></TableCell>
-                            <TableCell className="font-medium">
-                              <div>{course.code}</div>
-                              <div className="text-sm text-gray-500">
-                                Semester {course.semester}
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              <div>{course.class}</div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="font-medium">{course.name}</div>
-                            </TableCell>
-                            <TableCell>{course.lecturer}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">
-                                {course.credits} SKS
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm">
-                                <div>{course.day}</div>
-                                <div className="text-gray-500">
-                                  {formatTimeRange(
-                                    course.startTime,
-                                    course.endTime
-                                  )}
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>{course.room}</TableCell>
-                            <TableCell>
-                              <CategoryBadge category={course.category} />
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex space-x-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEditCourse(course)}
-                                  aria-label={`Edit mata kuliah ${getFullCourseCode(course)}`}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleDeleteCourseClick(course)
-                                  }
-                                  aria-label={`Hapus mata kuliah ${getFullCourseCode(course)}`}
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </React.Fragment>
-                  ))
-                : // Regular display
-                  courseList.map((course) => (
-                    <TableRow
-                      key={course.id}
-                      className={
-                        selectedCourses.includes(course.id) ? 'bg-blue-50' : ''
-                      }
-                    >
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedCourses.includes(course.id)}
-                          onCheckedChange={(checked) =>
-                            handleSelectCourse(course.id, checked as boolean)
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <div>{course.code}</div>
-                        <div className="text-sm text-gray-500">
-                          Semester {course.semester}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <div>{course.class}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">{course.name}</div>
-                      </TableCell>
-                      <TableCell>{course.lecturer}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{course.credits} SKS</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div>{course.day}</div>
-                          <div className="text-gray-500">
-                            {formatTimeRange(course.startTime, course.endTime)}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{course.room}</TableCell>
-                      <TableCell>
-                        <CategoryBadge category={course.category} />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditCourse(course)}
-                            aria-label={`Edit mata kuliah ${getFullCourseCode(course)}`}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteCourseClick(course)}
-                            aria-label={`Hapus mata kuliah ${getFullCourseCode(course)}`}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+              {displayCourses &&
+                displayCourses.map((semesterGroup) => (
+                  <React.Fragment key={semesterGroup.semester}>
+                    {/* Semester header row */}
+                    <TableRow className="bg-gray-100 hover:bg-gray-200 cursor-pointer border-b-2">
+                      <TableCell colSpan={11}>
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-xl">
+                            Semester {semesterGroup.semester}
+                          </span>
+                          <Badge variant="secondary">
+                            {semesterGroup.totalCourses} kelas dalam{' '}
+                            {semesterGroup.codeGroups.length} mata kuliah
+                          </Badge>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+
+                    {/* Code groups within semester */}
+                    {semesterGroup.codeGroups.map((group) => (
+                      <React.Fragment key={group.code}>
+                        {/* Code group header row */}
+                        <TableRow
+                          className="bg-gray-50 hover:bg-gray-100 cursor-pointer border-b-2"
+                          onClick={() => toggleGroup(group.code)}
+                        >
+                          <TableCell>
+                            <div className="flex items-center justify-center"></div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                              >
+                                {expandedGroups.has(group.code) ? (
+                                  <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </TableCell>
+                          <TableCell colSpan={9}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="font-semibold text-lg">
+                                  {group.code}
+                                </span>
+                                <Badge variant="secondary">
+                                  {group.totalClasses} kelas
+                                </Badge>
+                                <span className="text-sm text-gray-600">
+                                  {group.courses[0]?.name}
+                                </span>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Group courses (when expanded) */}
+                        {expandedGroups.has(group.code) &&
+                          group.courses.map((course: Course) => (
+                            <TableRow
+                              key={course.id}
+                              className={
+                                selectedCourses.includes(course.id)
+                                  ? 'bg-blue-50'
+                                  : ''
+                              }
+                            >
+                              <TableCell>
+                                <div className="flex items-center justify-center">
+                                  <Checkbox
+                                    checked={selectedCourses.includes(
+                                      course.id
+                                    )}
+                                    onCheckedChange={(checked) =>
+                                      handleSelectCourse(
+                                        course.id,
+                                        checked as boolean
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center justify-center"></div>
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                <div>{course.code}</div>
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                <div>{course.class}</div>
+                              </TableCell>
+                              <TableCell className="whitespace-normal align-middle">
+                                <div
+                                  className="font-medium max-w-[200px] lg:max-w-[300px]"
+                                  title={course.name}
+                                >
+                                  {course.name}
+                                </div>
+                              </TableCell>
+                              <TableCell className="whitespace-normal align-middle">
+                                <div
+                                  className="max-w-[150px] lg:max-w-[200px]"
+                                  title={course.lecturer}
+                                >
+                                  {course.lecturer}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {course.credits} SKS
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  <div>{course.day}</div>
+                                  <div className="text-gray-500">
+                                    {formatTimeRange(
+                                      course.startTime,
+                                      course.endTime
+                                    )}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>{course.room}</TableCell>
+                              <TableCell>
+                                <CategoryBadge category={course.category} />
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex space-x-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEditCourse(course)}
+                                    aria-label={`Edit mata kuliah ${getFullCourseCode(
+                                      course
+                                    )}`}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleDeleteCourseClick(course)
+                                    }
+                                    aria-label={`Hapus mata kuliah ${getFullCourseCode(
+                                      course
+                                    )}`}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </React.Fragment>
+                    ))}
+                  </React.Fragment>
+                ))}
             </TableBody>
           </Table>
         </div>

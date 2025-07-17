@@ -1,4 +1,5 @@
-import { Course } from '@/lib/types/course';
+import { Course } from '@/lib/interfaces/course';
+import { TimeConflict } from '@/lib/interfaces/schedule';
 
 // Days of week array
 export const daysOfWeek = [
@@ -12,13 +13,6 @@ export const daysOfWeek = [
 ];
 
 // Time conflict detection
-interface TimeConflict {
-  courses: [Course, Course];
-  course1: Course;
-  course2: Course;
-  day: string;
-  time: string;
-}
 
 export const detectTimeConflicts = (courses: Course[]): TimeConflict[] => {
   const conflicts: TimeConflict[] = [];

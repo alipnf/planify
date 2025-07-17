@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
-import type { Course } from '@/lib/types/course';
+import type { Course } from '@/lib/interfaces/course';
 
 export async function POST(req: NextRequest) {
   const {
@@ -76,7 +76,10 @@ Response Anda HARUS HANYA JSON, tanpa teks atau markup lain.`;
   } catch (error) {
     console.error('Detailed error in generate-schedule:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: (error as Error).message || 'Unknown error' },
+      {
+        error: 'Internal server error',
+        details: (error as Error).message || 'Unknown error',
+      },
       { status: 500 }
     );
   }

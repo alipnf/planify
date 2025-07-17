@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     // A lightweight call to a model to verify the key
     await ai.models.generateContent({
-      model: 'gemini-2.5-pro',
+      model: 'gemini-2.5-flash',
       contents: 'Test',
     });
 

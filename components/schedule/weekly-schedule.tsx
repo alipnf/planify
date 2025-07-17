@@ -2,16 +2,12 @@ import { Calendar, AlertTriangle, RotateCcw, Save } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Course } from '@/lib/types/course';
+import { Course } from '@/lib/interfaces/course';
+import { TimeConflict } from '@/lib/interfaces/schedule';
 import { daysOfWeek, getCourseColor } from '@/lib/schedule-utils';
 import { formatTimeRange } from '@/lib/course-utils';
 import React from 'react';
 import { useCreateSchedule } from '@/lib/hooks/use-create-schedule';
-
-interface TimeConflict {
-  course1: Course;
-  course2: Course;
-}
 
 interface WeeklyScheduleProps {
   courses?: Course[];

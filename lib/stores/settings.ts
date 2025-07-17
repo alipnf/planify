@@ -1,21 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
-import { APISettings } from '@/lib/types/settings';
 
 interface SettingsState {
-  // API Settings
-  apiSettings: APISettings;
   savedApiKey: string;
 
   // UI States
+  tempApiKey: string; // untuk input form sementara
   showApiKey: boolean;
   isSaving: boolean;
 
   // Actions
   setShowApiKey: (show: boolean) => void;
-  setApiSettings: (settings: APISettings) => void;
-  handleApiKeyChange: (value: string) => void;
+  setTempApiKey: (value: string) => void;
   handleSaveApiSettings: () => Promise<void>;
   handleDeleteApiKey: () => void;
 }
@@ -24,31 +21,20 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
       // Initial state
-      apiSettings: {
-        googleAiApiKey: '',
-      },
       savedApiKey: '',
+      tempApiKey: '',
       showApiKey: false,
       isSaving: false,
 
       // Actions
       setShowApiKey: (show) => set({ showApiKey: show }),
 
-      setApiSettings: (settings) => set({ apiSettings: settings }),
-
-      handleApiKeyChange: (value) => {
-        set((state) => ({
-          apiSettings: {
-            ...state.apiSettings,
-            googleAiApiKey: value,
-          },
-        }));
-      },
+      setTempApiKey: (value) => set({ tempApiKey: value }),
 
       handleSaveApiSettings: async () => {
-        const { apiSettings } = get();
+        const { tempApiKey } = get();
 
-        if (!apiSettings.googleAiApiKey.trim()) {
+        if (!tempApiKey.trim()) {
           toast.error('Masukkan API key terlebih dahulu.');
           return;
         }
@@ -61,13 +47,13 @@ export const useSettingsStore = create<SettingsState>()(
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ apiKey: apiSettings.googleAiApiKey }),
+            body: JSON.stringify({ apiKey: tempApiKey }),
           });
 
           const result = await response.json();
 
           if (response.ok && result.success) {
-            set({ savedApiKey: apiSettings.googleAiApiKey });
+            set({ savedApiKey: tempApiKey });
             toast.success('API key valid dan berhasil disimpan!');
           } else {
             toast.error(
@@ -84,8 +70,8 @@ export const useSettingsStore = create<SettingsState>()(
 
       handleDeleteApiKey: () => {
         set({
-          apiSettings: { googleAiApiKey: '' },
           savedApiKey: '',
+          tempApiKey: '',
         });
         toast.info('API key telah dihapus.');
       },
@@ -93,10 +79,17 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'settings-storage',
       partialize: (state) => ({
-        apiSettings: state.apiSettings,
         savedApiKey: state.savedApiKey,
+        // tempApiKey tidak perlu disimpan di localStorage
       }),
     }
   )
 );
 
+// Helper untuk inisialisasi tempApiKey dengan savedApiKey
+export const initializeTempApiKey = () => {
+  const store = useSettingsStore.getState();
+  if (store.savedApiKey && !store.tempApiKey) {
+    store.setTempApiKey(store.savedApiKey);
+  }
+};

@@ -18,11 +18,7 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
           {Icon && (
             <Icon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           )}
-          <Input
-            ref={ref}
-            className={Icon ? "pl-9" : ""}
-            {...props}
-          />
+          <Input ref={ref} className={Icon ? 'pl-9' : ''} {...props} />
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
@@ -30,4 +26,4 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
   }
 );
 
-FormField.displayName = "FormField";
+FormField.displayName = 'FormField';

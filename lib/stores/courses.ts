@@ -7,7 +7,8 @@ import {
   CreateCourseData,
   CoursesState,
   CoursesActions,
-} from '@/lib/types/course';
+  GroupedCourses,
+} from '@/lib/interfaces/course';
 import * as coursesService from '@/lib/services/courses';
 import {
   filterCourses,
@@ -36,9 +37,7 @@ type Store = Omit<
 > &
   CoursesActions & {
     filteredCourses: () => Course[];
-    groupedCourses: () =>
-      | { code: string; courses: Course[]; totalClasses: number }[]
-      | null;
+    groupedCourses: () => GroupedCourses;
     availableClasses: () => string[];
     selectedCourseNames: () => string[];
     allSelected: () => boolean;
@@ -58,9 +57,9 @@ export const useCoursesStore = create<Store>()(
       showImportModal: false,
       selectedSemester: 'all',
       selectedClass: 'all',
-      groupByCode: false,
       isLoading: true,
       isSaving: false,
+      isDeleting: false,
       showDeleteDialog: false,
       showBulkDeleteDialog: false,
       courseToDelete: null,
@@ -78,15 +77,38 @@ export const useCoursesStore = create<Store>()(
       },
       groupedCourses: () => {
         const state = get();
-        if (!state.groupByCode) return null;
-        const grouped = groupCoursesByCode(state.filteredCourses());
-        return Object.entries(grouped)
-          .map(([code, coursesInGroup]) => ({
-            code,
-            courses: sortCourseClasses(coursesInGroup),
-            totalClasses: coursesInGroup.length,
-          }))
-          .sort((a, b) => a.code.localeCompare(b.code));
+
+        // First group by semester
+        const semesterGroups: Record<string, Course[]> = state
+          .filteredCourses()
+          .reduce((groups: Record<string, Course[]>, course) => {
+            const semester = course.semester;
+            if (!groups[semester]) {
+              groups[semester] = [];
+            }
+            groups[semester].push(course);
+            return groups;
+          }, {});
+
+        // Then for each semester, group by code
+        return Object.entries(semesterGroups)
+          .map(([semester, coursesInSemester]) => {
+            const groupedByCode = groupCoursesByCode(coursesInSemester);
+            const codeGroups = Object.entries(groupedByCode)
+              .map(([code, coursesInGroup]) => ({
+                code,
+                courses: sortCourseClasses(coursesInGroup),
+                totalClasses: coursesInGroup.length,
+              }))
+              .sort((a, b) => a.code.localeCompare(b.code));
+
+            return {
+              semester,
+              codeGroups,
+              totalCourses: coursesInSemester.length,
+            };
+          })
+          .sort((a, b) => a.semester.localeCompare(b.semester));
       },
       availableClasses: () => {
         const state = get();
@@ -123,13 +145,11 @@ export const useCoursesStore = create<Store>()(
       loadCourses: async (forceRefresh = false) => {
         const state = get();
 
-        // Jika sudah ada data dan tidak force refresh, skip API call
         if (!forceRefresh && state.courses.length > 0) {
           set({ isLoading: false });
           return;
         }
 
-        // Jika force refresh, hapus dari cache dulu
         if (forceRefresh) {
           useCoursesStore.persist.clearStorage();
         }
@@ -137,7 +157,6 @@ export const useCoursesStore = create<Store>()(
         set({ isLoading: true });
         try {
           const data = await coursesService.getAllCourses();
-          // Transform courses untuk menggunakan deterministic ID dan remove sensitive data
           const sanitizedCourses = data.map((course) => ({
             id: generateCourseId(course), // Consistent deterministic ID
             code: course.code,
@@ -198,23 +217,28 @@ export const useCoursesStore = create<Store>()(
           toast.info('Tidak ada mata kuliah untuk diimpor.');
           return;
         }
-        set({ showImportModal: false });
 
-        const promise = coursesService.importCourses(importedCourses);
-
-        toast.promise(promise, {
-          loading: 'Mengimpor mata kuliah...',
-          success: (newCourses) => {
-            get().loadCourses(true); // Force refresh
-            return `${newCourses.length} mata kuliah berhasil diimpor`;
-          },
-          error: (err) => err.message || 'Gagal mengimpor mata kuliah',
-        });
+        try {
+          const newCourses =
+            await coursesService.importCourses(importedCourses);
+          await get().loadCourses(true); // Force refresh
+          toast.success(`${newCourses.length} mata kuliah berhasil diimpor`);
+          set({ showImportModal: false }); // Tutup modal setelah berhasil
+          return newCourses;
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : 'Gagal mengimpor mata kuliah';
+          toast.error(errorMessage);
+          // Jangan tutup modal jika ada error, biarkan user melihat error
+          throw error;
+        }
       },
 
       handleExportAll: () => {
         const state = get();
-        const exportData = state.courses.map((course) => ({
+        const courseData = state.courses.map((course) => ({
           code: course.code,
           name: course.name,
           lecturer: course.lecturer,
@@ -227,6 +251,11 @@ export const useCoursesStore = create<Store>()(
           endTime: course.endTime,
           semester: course.semester,
         }));
+        const exportData = {
+          type: 'planify-courses',
+          totalCourses: state.courses.length,
+          data: courseData,
+        };
         const dataStr = JSON.stringify(exportData, null, 2);
         const dataBlob = new Blob([dataStr], { type: 'application/json' });
 
@@ -293,18 +322,26 @@ export const useCoursesStore = create<Store>()(
         const state = get();
         if (!state.courseToDelete) return;
 
+        set({ isDeleting: true });
         try {
-          const courseName = `${getFullCourseCode(state.courseToDelete)} - ${state.courseToDelete.name}`;
+          const courseName = `${getFullCourseCode(state.courseToDelete)} - ${
+            state.courseToDelete.name
+          }`;
           await coursesService.deleteCourse({
             course_code: state.courseToDelete.code,
             class_name: state.courseToDelete.class,
           });
           await get().loadCourses(true); // Force refresh
           toast.success(`${courseName} berhasil dihapus`);
-          set({ showDeleteDialog: false, courseToDelete: null });
         } catch (error) {
           console.error('Error deleting course:', error);
           toast.error('Gagal menghapus mata kuliah');
+        } finally {
+          set({
+            showDeleteDialog: false,
+            courseToDelete: null,
+            isDeleting: false,
+          });
         }
       },
 
@@ -312,6 +349,7 @@ export const useCoursesStore = create<Store>()(
         const state = get();
         if (state.selectedCourses.length === 0) return;
 
+        set({ isDeleting: true });
         const coursesToDelete = state.courses
           .filter((c) => state.selectedCourses.includes(c.id))
           .map((c) => ({ course_code: c.code, class_name: c.class }));
@@ -322,10 +360,15 @@ export const useCoursesStore = create<Store>()(
           toast.success(
             `${coursesToDelete.length} mata kuliah berhasil dihapus`
           );
-          set({ showBulkDeleteDialog: false, selectedCourses: [] });
         } catch (error) {
           console.error('Error bulk deleting courses:', error);
           toast.error('Gagal menghapus beberapa mata kuliah');
+        } finally {
+          set({
+            showBulkDeleteDialog: false,
+            selectedCourses: [],
+            isDeleting: false,
+          });
         }
       },
 
@@ -333,19 +376,15 @@ export const useCoursesStore = create<Store>()(
       setSearchQuery: (query) => set({ searchQuery: query }),
       setSelectedSemester: (semester) => set({ selectedSemester: semester }),
       setSelectedClass: (classValue) => set({ selectedClass: classValue }),
-      setGroupByCode: (group) => set({ groupByCode: group }),
       setShowCourseModal: (show) => set({ showCourseModal: show }),
       setShowImportModal: (show) => set({ showImportModal: show }),
       setShowDeleteDialog: (show) => set({ showDeleteDialog: show }),
       setShowBulkDeleteDialog: (show) => set({ showBulkDeleteDialog: show }),
     }),
     {
-      name: 'planify-courses-store', // Key untuk localStorage
+      name: 'planify-courses-store',
       storage: createJSONStorage(() => localStorage),
-      // ALTERNATIF untuk privacy lebih baik:
-      // storage: createJSONStorage(() => sessionStorage), // Data hilang saat tab ditutup
       partialize: (state) => ({
-        // Hanya persist data courses tanpa metadata sensitif
         courses: state.courses.map((course) => ({
           id: generateCourseId(course), // Generate deterministic ID
           code: course.code,
@@ -361,14 +400,10 @@ export const useCoursesStore = create<Store>()(
           class: course.class,
           // Exclude: user_id, created_at, updated_at (data sensitif)
         })),
-        // UI preferences tetap di-persist (aman)
         selectedSemester: state.selectedSemester,
         selectedClass: state.selectedClass,
-        groupByCode: state.groupByCode,
       }),
-      version: 1, // Version untuk migration jika diperlukan di masa depan
       onRehydrateStorage: () => {
-        // Callback yang dipanggil saat hydration selesai
         return (state) => {
           if (state) {
             // Jika ada data dari persist, set loading = false

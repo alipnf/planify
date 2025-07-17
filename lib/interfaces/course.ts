@@ -74,17 +74,19 @@ export interface CourseFilters {
 }
 
 // Grouped courses (for display)
-export interface GroupedCourse {
+export interface CodeGroup {
   code: string;
   courses: Course[];
   totalClasses: number;
 }
 
-export type GroupedCourses = Array<{
-  code: string;
-  courses: Course[];
-  totalClasses: number;
-}> | null;
+export interface SemesterGroup {
+  semester: string;
+  codeGroups: CodeGroup[];
+  totalCourses: number;
+}
+
+export type GroupedCourses = SemesterGroup[] | null;
 
 export interface CoursesState {
   // Data
@@ -99,7 +101,6 @@ export interface CoursesState {
   selectedCourses: string[];
   selectedSemester: string;
   selectedClass: string;
-  groupByCode: boolean;
   isLoading: boolean;
 
   // Modal States
@@ -115,20 +116,22 @@ export interface CoursesState {
   someSelected: boolean;
   hasFilters: boolean;
   isSaving: boolean;
+  isDeleting: boolean;
 }
 
 export interface CoursesActions {
   // Data Actions
   loadCourses: (forceRefresh?: boolean) => Promise<void>;
   handleSaveCourse: (courseData: Partial<Course>) => Promise<void>;
-  handleImportCourses: (importedCourses: CreateCourseData[]) => Promise<void>;
+  handleImportCourses: (
+    importedCourses: CreateCourseData[]
+  ) => Promise<Course[] | undefined>;
   handleExportAll: () => void;
 
   // UI Actions
   setSearchQuery: (query: string) => void;
   setSelectedSemester: (semester: string) => void;
   setSelectedClass: (classValue: string) => void;
-  setGroupByCode: (group: boolean) => void;
 
   // Selection Actions
   handleSelectAll: (checked: boolean) => void;

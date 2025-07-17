@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
-import { Course } from '@/lib/types/course';
-import { SavedSchedule } from '@/lib/types/schedule';
+import { Course } from '@/lib/interfaces/course';
+import { SavedSchedule } from '@/lib/interfaces/schedule';
 
 const supabase = createClient();
 
@@ -21,6 +21,17 @@ export async function saveSchedule(
     const user = await getCurrentUser();
     if (!user) throw new Error('User not authenticated.');
 
+    // Validate 24 SKS limit
+    const totalSKS = scheduleData.reduce(
+      (sum, course) => sum + course.credits,
+      0
+    );
+    if (totalSKS > 24) {
+      throw new Error(
+        `Jadwal tidak dapat disimpan karena melebihi batas maksimal 24 SKS (total: ${totalSKS} SKS).`
+      );
+    }
+
     const { data, error } = await supabase
       .from('saved_schedules')
       .insert({
@@ -35,6 +46,12 @@ export async function saveSchedule(
     return data;
   } catch (error) {
     console.error('Failed to save schedule:', error);
+    if (
+      error instanceof Error &&
+      error.message.includes('melebihi batas maksimal 24 SKS')
+    ) {
+      throw error; // Re-throw the SKS limit error with the original message
+    }
     throw new Error('Gagal menyimpan jadwal. Silakan coba lagi.');
   }
 }
