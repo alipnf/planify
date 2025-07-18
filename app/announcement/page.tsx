@@ -58,7 +58,7 @@ export default function AnnouncementPage() {
               Bisa mengirimkan saran atau laporan bug melalui formulir berikut:
             </p>
             <Link
-              href="https://forms.gle/your-feedback-form-link"
+              href="https://forms.gle/EH3dkN1RGrPcaP328"
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
@@ -88,7 +88,7 @@ export default function AnnouncementPage() {
               Planify melalui link berikut:
             </p>
             <Link
-              href="https://link-to-your-dummy-data"
+              href="https://drive.google.com/drive/folders/1Ft4XD523kpCOx9_h2iyZAfGYdUBpxyKP?usp=sharing"
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
@@ -104,7 +104,7 @@ export default function AnnouncementPage() {
               membantu pengembangan Planify ke depannya.
             </p>
             <Link
-              href="https://forms.gle/your-matkul-contribution-form"
+              href="https://forms.gle/HR2G3sYwqoXXMiqm7"
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
