@@ -28,6 +28,8 @@ import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/lib/hooks/use-auth';
 import { useAuthStore } from '@/lib/stores/auth';
 import { useCoursesStore } from '@/lib/stores/courses';
+import { useSavedSchedulesStore } from '@/lib/stores/saved';
+import { useCreateScheduleStore } from '@/lib/stores/create-schedule';
 
 export function Navbar() {
   const router = useRouter();
@@ -38,11 +40,12 @@ export function Navbar() {
 
   const handleLogout = async () => {
     const supabase = createClient();
-    useCoursesStore.persist.clearStorage();
     await supabase.auth.signOut();
+    useCoursesStore.persist.clearStorage();
+    useSavedSchedulesStore.persist.clearStorage();
+    useCreateScheduleStore.persist.clearStorage();
     setMessage(null);
-    router.push('/auth/login');
-    router.refresh();
+    window.location.assign('/auth/login');
   };
 
   const isAuthenticated = !loading && !!user;
