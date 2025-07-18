@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  Settings,
   Key,
   Save,
   Eye,
@@ -59,11 +58,8 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-4 md:p-8">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold flex items-center">
-            <Settings className="mr-3 text-blue-600" />
-            Pengaturan
-          </h1>
+        <header className="mb-8 justify-center flex flex-col items-center text-center">
+          <h1 className="text-3xl font-bold flex items-center">Pengaturan</h1>
           <p className="text-muted-foreground mt-2">
             Kelola pengaturan API Key Anda untuk fitur-fitur AI.
           </p>
