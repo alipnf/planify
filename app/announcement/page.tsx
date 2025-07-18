@@ -16,8 +16,7 @@ export default function AnnouncementPage() {
           </CardHeader>
           <CardContent>
             <p className="mb-4">
-              Saat ini, sedang mengembangkan Planify supaya semakin nyaman
-              digunakan. Berikut beberapa fitur yang sedang dipersiapkan:
+              Berikut beberapa fitur yang sedang dipersiapkan:
             </p>
             <ul className="list-disc list-inside space-y-2">
               <li>
