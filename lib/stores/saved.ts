@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { toast } from 'sonner';
 import {
   getSavedSchedules,
@@ -62,6 +62,11 @@ export const useSavedSchedulesStore = create<SavedSchedulesState>()(
           set({ isLoading: false });
           return;
         }
+
+        if (forceReload) {
+          useSavedSchedulesStore.persist.clearStorage();
+        }
+
         set({ isLoading: true });
         try {
           const data = await getSavedSchedules();
@@ -175,11 +180,14 @@ export const useSavedSchedulesStore = create<SavedSchedulesState>()(
     }),
     {
       name: 'saved-schedules-storage', // unique name
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         schedules: state.schedules.map((schedule) => ({
+          id: schedule.id,
           schedule_name: schedule.schedule_name,
           schedule_data: schedule.schedule_data,
           is_shared: schedule.is_shared,
+          created_at: schedule.created_at,
         })),
       }),
     }

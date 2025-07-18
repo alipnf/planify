@@ -32,6 +32,9 @@ export function CourseTable() {
   } = useCoursesStore();
 
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [expandedSemesters, setExpandedSemesters] = useState<Set<string>>(
+    new Set()
+  );
 
   // Auto-expand all groups when grouping is first enabled
   React.useEffect(() => {
@@ -39,6 +42,11 @@ export function CourseTable() {
       groupedCourses()?.flatMap((sg) => sg.codeGroups.map((cg) => cg.code))
     );
     setExpandedGroups(allGroupCodes);
+
+    const allSemesterCodes = new Set(
+      groupedCourses()?.map((sg) => sg.semester)
+    );
+    setExpandedSemesters(allSemesterCodes);
   }, [groupedCourses]);
 
   const toggleGroup = (code: string) => {
@@ -49,6 +57,16 @@ export function CourseTable() {
       newExpanded.add(code);
     }
     setExpandedGroups(newExpanded);
+  };
+
+  const toggleSemester = (semester: string) => {
+    const newExpanded = new Set(expandedSemesters);
+    if (newExpanded.has(semester)) {
+      newExpanded.delete(semester);
+    } else {
+      newExpanded.add(semester);
+    }
+    setExpandedSemesters(newExpanded);
   };
 
   const displayCourses = groupedCourses();
@@ -104,7 +122,6 @@ export function CourseTable() {
                     />
                   </div>
                 </TableHead>
-                <TableHead className="w-8"></TableHead>
                 <TableHead>Kode</TableHead>
                 <TableHead>Kelas</TableHead>
                 <TableHead>Mata Kuliah</TableHead>
@@ -121,9 +138,23 @@ export function CourseTable() {
                 displayCourses.map((semesterGroup) => (
                   <React.Fragment key={semesterGroup.semester}>
                     {/* Semester header row */}
-                    <TableRow className="bg-gray-100 hover:bg-gray-200 cursor-pointer border-b-2">
+                    <TableRow
+                      className="bg-gray-100 hover:bg-gray-200 cursor-pointer border-b-2"
+                      onClick={() => toggleSemester(semesterGroup.semester)}
+                    >
                       <TableCell colSpan={11}>
                         <div className="flex items-center gap-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                          >
+                            {expandedSemesters.has(semesterGroup.semester) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
                           <span className="font-bold text-xl">
                             Semester {semesterGroup.semester}
                           </span>
@@ -136,149 +167,144 @@ export function CourseTable() {
                     </TableRow>
 
                     {/* Code groups within semester */}
-                    {semesterGroup.codeGroups.map((group) => (
-                      <React.Fragment key={group.code}>
-                        {/* Code group header row */}
-                        <TableRow
-                          className="bg-gray-50 hover:bg-gray-100 cursor-pointer border-b-2"
-                          onClick={() => toggleGroup(group.code)}
-                        >
-                          <TableCell>
-                            <div className="flex items-center justify-center"></div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-center">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                              >
-                                {expandedGroups.has(group.code) ? (
-                                  <ChevronDown className="h-4 w-4" />
-                                ) : (
-                                  <ChevronRight className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </div>
-                          </TableCell>
-                          <TableCell colSpan={9}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <span className="font-semibold text-lg">
-                                  {group.code}
-                                </span>
-                                <Badge variant="secondary">
-                                  {group.totalClasses} kelas
-                                </Badge>
-                                <span className="text-sm text-gray-600">
-                                  {group.courses[0]?.name}
-                                </span>
+                    {expandedSemesters.has(semesterGroup.semester) &&
+                      semesterGroup.codeGroups.map((group) => (
+                        <React.Fragment key={group.code}>
+                          {/* Code group header row */}
+                          <TableRow
+                            className="bg-gray-50 hover:bg-gray-100 cursor-pointer border-b-2"
+                            onClick={() => toggleGroup(group.code)}
+                          >
+                            <TableCell>
+                              <div className="flex items-center justify-center">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                >
+                                  {expandedGroups.has(group.code) ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                  )}
+                                </Button>
                               </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                            </TableCell>
+                            <TableCell colSpan={9}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <span className="font-semibold text-lg">
+                                    {group.code}
+                                  </span>
+                                  <Badge variant="secondary">
+                                    {group.totalClasses} kelas
+                                  </Badge>
+                                  <span className="text-sm text-gray-600">
+                                    {group.courses[0]?.name}
+                                  </span>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
 
-                        {/* Group courses (when expanded) */}
-                        {expandedGroups.has(group.code) &&
-                          group.courses.map((course: Course) => (
-                            <TableRow
-                              key={course.id}
-                              className={
-                                selectedCourses.includes(course.id)
-                                  ? 'bg-blue-50'
-                                  : ''
-                              }
-                            >
-                              <TableCell>
-                                <div className="flex items-center justify-center">
-                                  <Checkbox
-                                    checked={selectedCourses.includes(
-                                      course.id
-                                    )}
-                                    onCheckedChange={(checked) =>
-                                      handleSelectCourse(
-                                        course.id,
-                                        checked as boolean
-                                      )
-                                    }
-                                  />
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center justify-center"></div>
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                <div>{course.code}</div>
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                <div>{course.class}</div>
-                              </TableCell>
-                              <TableCell className="whitespace-normal align-middle">
-                                <div
-                                  className="font-medium max-w-[200px] lg:max-w-[300px]"
-                                  title={course.name}
-                                >
-                                  {course.name}
-                                </div>
-                              </TableCell>
-                              <TableCell className="whitespace-normal align-middle">
-                                <div
-                                  className="max-w-[150px] lg:max-w-[200px]"
-                                  title={course.lecturer}
-                                >
-                                  {course.lecturer}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline">
-                                  {course.credits} SKS
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <div className="text-sm">
-                                  <div>{course.day}</div>
-                                  <div className="text-gray-500">
-                                    {formatTimeRange(
-                                      course.startTime,
-                                      course.endTime
-                                    )}
+                          {/* Group courses (when expanded) */}
+                          {expandedGroups.has(group.code) &&
+                            group.courses.map((course: Course) => (
+                              <TableRow
+                                key={course.id}
+                                className={
+                                  selectedCourses.includes(course.id)
+                                    ? 'bg-blue-50'
+                                    : ''
+                                }
+                              >
+                                <TableCell>
+                                  <div className="flex items-center justify-center">
+                                    <Checkbox
+                                      checked={selectedCourses.includes(
+                                        course.id
+                                      )}
+                                      onCheckedChange={(checked) =>
+                                        handleSelectCourse(
+                                          course.id,
+                                          checked as boolean
+                                        )
+                                      }
+                                    />
                                   </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>{course.room}</TableCell>
-                              <TableCell>
-                                <CategoryBadge category={course.category} />
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex space-x-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleEditCourse(course)}
-                                    aria-label={`Edit mata kuliah ${getFullCourseCode(
-                                      course
-                                    )}`}
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                  <div>{course.code}</div>
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                  <div>{course.class}</div>
+                                </TableCell>
+                                <TableCell className="whitespace-normal align-middle">
+                                  <div
+                                    className="font-medium max-w-[200px] lg:max-w-[300px]"
+                                    title={course.name}
                                   >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleDeleteCourseClick(course)
-                                    }
-                                    aria-label={`Hapus mata kuliah ${getFullCourseCode(
-                                      course
-                                    )}`}
+                                    {course.name}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="whitespace-normal align-middle">
+                                  <div
+                                    className="max-w-[150px] lg:max-w-[200px]"
+                                    title={course.lecturer}
                                   >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                      </React.Fragment>
-                    ))}
+                                    {course.lecturer}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">
+                                    {course.credits} SKS
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="text-sm">
+                                    <div>{course.day}</div>
+                                    <div className="text-gray-500">
+                                      {formatTimeRange(
+                                        course.startTime,
+                                        course.endTime
+                                      )}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{course.room}</TableCell>
+                                <TableCell>
+                                  <CategoryBadge category={course.category} />
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex space-x-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEditCourse(course)}
+                                      aria-label={`Edit mata kuliah ${getFullCourseCode(
+                                        course
+                                      )}`}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleDeleteCourseClick(course)
+                                      }
+                                      aria-label={`Hapus mata kuliah ${getFullCourseCode(
+                                        course
+                                      )}`}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-500" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </React.Fragment>
+                      ))}
                   </React.Fragment>
                 ))}
             </TableBody>
