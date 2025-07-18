@@ -56,6 +56,9 @@ export function CourseSelectionTable() {
   } = useCreateSchedule();
 
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [expandedSemesters, setExpandedSemesters] = useState<Set<string>>(
+    new Set()
+  );
 
   const courses = filteredCourses();
 
@@ -109,6 +112,9 @@ export function CourseSelectionTable() {
         )
       );
       setExpandedGroups(allGroupCodes);
+
+      const allSemesterCodes = new Set(groupedCourses.map((sg) => sg.semester));
+      setExpandedSemesters(allSemesterCodes);
     }
   }, [groupedCourses, expandedGroups.size]);
 
@@ -121,6 +127,16 @@ export function CourseSelectionTable() {
       newExpanded.add(groupKey);
     }
     setExpandedGroups(newExpanded);
+  };
+
+  const toggleSemester = (semester: string) => {
+    const newExpanded = new Set(expandedSemesters);
+    if (newExpanded.has(semester)) {
+      newExpanded.delete(semester);
+    } else {
+      newExpanded.add(semester);
+    }
+    setExpandedSemesters(newExpanded);
   };
 
   const isSelected = (course: Course) =>
@@ -288,9 +304,23 @@ export function CourseSelectionTable() {
                 {groupedCourses.map((semesterGroup) => (
                   <React.Fragment key={semesterGroup.semester}>
                     {/* Semester header row */}
-                    <TableRow className="bg-gray-100 border-b-2 hover:bg-gray-100">
+                    <TableRow
+                      className="bg-gray-100 border-b-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => toggleSemester(semesterGroup.semester)}
+                    >
                       <TableCell colSpan={11}>
                         <div className="flex items-center gap-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                          >
+                            {expandedSemesters.has(semesterGroup.semester) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
                           <span className="font-bold text-xl">
                             Semester {semesterGroup.semester}
                           </span>
@@ -303,133 +333,136 @@ export function CourseSelectionTable() {
                     </TableRow>
 
                     {/* Code groups within semester */}
-                    {semesterGroup.codeGroups.map((group) => {
-                      const groupKey = `${semesterGroup.semester}-${group.code}`;
-                      const isExpanded = expandedGroups.has(groupKey);
+                    {expandedSemesters.has(semesterGroup.semester) &&
+                      semesterGroup.codeGroups.map((group) => {
+                        const groupKey = `${semesterGroup.semester}-${group.code}`;
+                        const isExpanded = expandedGroups.has(groupKey);
 
-                      return (
-                        <React.Fragment key={group.code}>
-                          {/* Code group header row */}
-                          <TableRow
-                            className="bg-gray-50 cursor-pointer border-b-2 hover:bg-gray-50"
-                            onClick={() =>
-                              toggleGroup(semesterGroup.semester, group.code)
-                            }
-                          >
-                            <TableCell>
-                              <div className="flex items-center justify-center">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                >
-                                  {isExpanded ? (
-                                    <ChevronDown className="h-4 w-4" />
-                                  ) : (
-                                    <ChevronRight className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </div>
-                            </TableCell>
-                            <TableCell colSpan={10}>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <span className="font-semibold text-lg">
-                                    {group.code}
-                                  </span>
-                                  <Badge variant="secondary">
-                                    {group.totalClasses} kelas
-                                  </Badge>
-                                  <span className="text-sm text-gray-600">
-                                    {group.courses[0]?.name}
-                                  </span>
+                        return (
+                          <React.Fragment key={group.code}>
+                            {/* Code group header row */}
+                            <TableRow
+                              className="bg-gray-50 cursor-pointer border-b-2 hover:bg-gray-50"
+                              onClick={() =>
+                                toggleGroup(semesterGroup.semester, group.code)
+                              }
+                            >
+                              <TableCell>
+                                <div className="flex items-center justify-center">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                  >
+                                    {isExpanded ? (
+                                      <ChevronDown className="h-4 w-4" />
+                                    ) : (
+                                      <ChevronRight className="h-4 w-4" />
+                                    )}
+                                  </Button>
                                 </div>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-
-                          {/* Group courses (when expanded) */}
-                          {isExpanded &&
-                            group.courses.map((course: Course) => {
-                              const courseSelected = isSelected(course);
-                              const courseConflicted = isConflicted(course);
-
-                              return (
-                                <TableRow
-                                  key={course.id}
-                                  className={`${
-                                    courseSelected
-                                      ? courseConflicted
-                                        ? 'bg-red-200 hover:bg-red-200'
-                                        : 'bg-blue-200 hover:bg-blue-200'
-                                      : 'hover:bg-transparent'
-                                  } cursor-pointer`}
-                                  onClick={() => toggleCourse(course)}
-                                >
-                                  <TableCell>
-                                    <div className="flex items-center justify-center"></div>
-                                  </TableCell>
-                                  <TableCell className="font-medium">
-                                    <div>{course.code}</div>
-                                  </TableCell>
-                                  <TableCell className="font-medium">
-                                    <div>{course.class}</div>
-                                  </TableCell>
-                                  <TableCell className="whitespace-normal align-middle">
-                                    <div className="font-medium max-w-[200px] lg:max-w-[300px]">
-                                      {course.name}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="whitespace-normal align-middle">
-                                    <div className="max-w-[150px] lg:max-w-[200px]">
-                                      {course.lecturer}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge variant="outline">
-                                      {course.credits} SKS
+                              </TableCell>
+                              <TableCell colSpan={10}>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-semibold text-lg">
+                                      {group.code}
+                                    </span>
+                                    <Badge variant="secondary">
+                                      {group.totalClasses} kelas
                                     </Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="text-sm">
-                                      <div>{course.day}</div>
-                                      <div className="text-gray-500">
-                                        {formatTimeRange(
-                                          course.startTime,
-                                          course.endTime
-                                        )}
+                                    <span className="text-sm text-gray-600">
+                                      {group.courses[0]?.name}
+                                    </span>
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+
+                            {/* Group courses (when expanded) */}
+                            {isExpanded &&
+                              group.courses.map((course: Course) => {
+                                const courseSelected = isSelected(course);
+                                const courseConflicted = isConflicted(course);
+
+                                return (
+                                  <TableRow
+                                    key={course.id}
+                                    className={`${
+                                      courseSelected
+                                        ? courseConflicted
+                                          ? 'bg-red-200 hover:bg-red-200'
+                                          : 'bg-blue-200 hover:bg-blue-200'
+                                        : 'hover:bg-transparent'
+                                    } cursor-pointer`}
+                                    onClick={() => toggleCourse(course)}
+                                  >
+                                    <TableCell>
+                                      <div className="flex items-center justify-center"></div>
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                      <div>{course.code}</div>
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                      <div>{course.class}</div>
+                                    </TableCell>
+                                    <TableCell className="whitespace-normal align-middle">
+                                      <div className="font-medium max-w-[200px] lg:max-w-[300px]">
+                                        {course.name}
                                       </div>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>{course.room}</TableCell>
-                                  <TableCell>
-                                    <CategoryBadge category={course.category} />
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="flex items-center justify-center">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 w-8 p-0"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          toggleCourse(course);
-                                        }}
-                                      >
-                                        {courseSelected ? (
-                                          <Minus className="h-4 w-4" />
-                                        ) : (
-                                          <Plus className="h-4 w-4" />
-                                        )}
-                                      </Button>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                        </React.Fragment>
-                      );
-                    })}
+                                    </TableCell>
+                                    <TableCell className="whitespace-normal align-middle">
+                                      <div className="max-w-[150px] lg:max-w-[200px]">
+                                        {course.lecturer}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Badge variant="outline">
+                                        {course.credits} SKS
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="text-sm">
+                                        <div>{course.day}</div>
+                                        <div className="text-gray-500">
+                                          {formatTimeRange(
+                                            course.startTime,
+                                            course.endTime
+                                          )}
+                                        </div>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>{course.room}</TableCell>
+                                    <TableCell>
+                                      <CategoryBadge
+                                        category={course.category}
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center justify-center">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 w-8 p-0"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleCourse(course);
+                                          }}
+                                        >
+                                          {courseSelected ? (
+                                            <Minus className="h-4 w-4" />
+                                          ) : (
+                                            <Plus className="h-4 w-4" />
+                                          )}
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                          </React.Fragment>
+                        );
+                      })}
                   </React.Fragment>
                 ))}
               </TableBody>

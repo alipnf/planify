@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { BookOpen, Save, LogOut, Menu, Plus, Settings } from 'lucide-react';
+import { BookOpen, Save, LogOut, Menu, Plus, Settings, BellRing } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -155,6 +155,12 @@ export function Navbar() {
                             <Settings className="h-4 w-4 mr-2" />
                             Pengaturan
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => router.push('/announcement')}
+                          >
+                            <BellRing className="h-4 w-4 mr-2" />
+                            Pengumuman
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => setShowLogoutAlert(true)}
@@ -254,6 +260,20 @@ export function Navbar() {
                           >
                             <Settings className="h-4 w-4" />
                             <span>Pengaturan</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href="/announcement"
+                            className={cn(
+                              'w-full flex items-center space-x-2',
+                              pathname === '/announcement'
+                                ? 'text-primary bg-primary/10'
+                                : 'text-muted-foreground'
+                            )}
+                          >
+                            <BellRing className="h-4 w-4" />
+                            <span>Pengumuman</span>
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
