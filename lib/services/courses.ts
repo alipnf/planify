@@ -269,26 +269,22 @@ export async function deleteCourse(courseIdentifier: {
   }
 }
 
-export async function deleteCourses(
+export async function deleteCoursesBulk(
   courseIdentifiers: { course_code: string; class_name: string }[]
 ): Promise<void> {
   const user = await getCurrentUser();
-  // We have to delete one by one because Supabase doesn't easily support
-  // bulk deletes on composite primary keys without using an RPC.
-  for (const identifier of courseIdentifiers) {
-    const { error } = await supabase.from('courses').delete().match({
-      user_id: user.id,
-      course_code: identifier.course_code,
-      class_name: identifier.class_name,
-    });
+  const course_codes = courseIdentifiers.map((c) => c.course_code);
+  const class_names = courseIdentifiers.map((c) => c.class_name);
 
-    if (error) {
-      console.error(
-        `Error deleting course ${identifier.course_code}-${identifier.class_name}:`,
-        error
-      );
-      // We'll continue trying to delete others even if one fails.
-    }
+  const { error } = await supabase.rpc('delete_courses_bulk', {
+    p_user_id: user.id,
+    p_course_codes: course_codes,
+    p_class_names: class_names,
+  });
+
+  if (error) {
+    console.error('Error bulk deleting courses:', error);
+    throw new Error('Gagal menghapus matkul secara bulk.');
   }
 }
 
@@ -387,7 +383,7 @@ export const coursesService = {
   createCourse,
   updateCourse,
   deleteCourse,
-  deleteCourses,
+  deleteCoursesBulk,
   importCourses,
   getCurrentUser,
 };

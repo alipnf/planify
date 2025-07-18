@@ -355,7 +355,7 @@ export const useCoursesStore = create<Store>()(
           .map((c) => ({ course_code: c.code, class_name: c.class }));
 
         try {
-          await coursesService.deleteCourses(coursesToDelete);
+          await coursesService.deleteCoursesBulk(coursesToDelete);
           await get().loadCourses(true); // Force refresh
           toast.success(
             `${coursesToDelete.length} mata kuliah berhasil dihapus`
