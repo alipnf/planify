@@ -7,6 +7,7 @@ import { useUser } from '@/lib/hooks/use-auth';
 import { SavedSchedule } from '@/lib/interfaces/schedule';
 import { saveSchedule, getSavedSchedules } from '@/lib/services/schedules';
 import { Course } from '@/lib/interfaces/course';
+import { useSavedSchedulesStore } from '@/lib/stores/saved';
 
 // Helper function to check if two course arrays are the same
 function areCourseArraysEqual(courses1: Course[], courses2: Course[]): boolean {
@@ -105,6 +106,7 @@ export function useSharePage(schedule: SavedSchedule) {
       await saveSchedule(newScheduleName, schedule.schedule_data);
       showSuccess('Jadwal berhasil disimpan ke akun Anda!');
       setShowSaveDialog(false);
+      await useSavedSchedulesStore.getState().loadSchedules(true);
       router.push('/saved');
     } catch (err) {
       console.error('Failed to save shared schedule:', err);
