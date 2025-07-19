@@ -39,7 +39,13 @@ export async function middleware(req: NextRequest) {
   // Refresh session and get user
   const { data } = await supabase.auth.getUser();
 
+  const publicAuthRoutes = ['/auth/login', '/auth/register'];
+
   if (data.user && pathname === '/') {
+    return NextResponse.redirect(new URL('/courses', req.nextUrl.origin));
+  }
+
+  if (data.user && publicAuthRoutes.some((route) => pathname.startsWith(route))) {
     return NextResponse.redirect(new URL('/courses', req.nextUrl.origin));
   }
 
