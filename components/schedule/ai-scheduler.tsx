@@ -144,6 +144,16 @@ export function AIScheduler() {
     });
   };
 
+  // Calculate work days based on returned schedule (case-insensitive)
+  const getWorkDays = (schedule: Course[]): string[] => {
+    const usedDays = [
+      ...new Set(schedule.map((c) => c.day.trim().toLowerCase())),
+    ];
+    return daysOfWeek.filter((day) => {
+      return usedDays.includes(day.trim().toLowerCase());
+    });
+  };
+
   const handlePreviewOption = (option: {
     id: number;
     courses: Course[];
@@ -292,30 +302,53 @@ export function AIScheduler() {
                       </div>
                     </div>
 
-                    {/* Free Days */}
+                    {/* Days Info */}
                     {(() => {
                       const freeDays = getFreeDays(option.courses);
-                      return freeDays.length > 0 ? (
-                        <div className="p-3 bg-green-50 rounded-lg">
-                          <div className="text-sm font-medium text-green-800 mb-1">
-                            Hari Libur:
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {freeDays.map((day: string) => (
-                              <span
-                                key={day}
-                                className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full"
-                              >
-                                {day}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-3 bg-orange-50 rounded-lg">
-                          <div className="text-sm font-medium text-orange-800">
-                            Tidak ada hari libur
-                          </div>
+                      const workDays = getWorkDays(option.courses);
+
+                      return (
+                        <div className="space-y-2">
+                          {workDays.length > 0 && (
+                            <div className="p-3 bg-green-50 rounded-lg">
+                              <div className="text-sm font-medium text-green-800 mb-1">
+                                Hari Masuk:
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {workDays.map((day: string) => (
+                                  <span
+                                    key={day}
+                                    className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full"
+                                  >
+                                    {day}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {freeDays.length > 0 ? (
+                            <div className="p-3 bg-red-50 rounded-lg">
+                              <div className="text-sm font-medium text-red-800 mb-1">
+                                Hari Libur:
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {freeDays.map((day: string) => (
+                                  <span
+                                    key={day}
+                                    className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full"
+                                  >
+                                    {day}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="p-3 bg-red-50 rounded-lg">
+                              <div className="text-sm font-medium text-red-800">
+                                Tidak ada hari libur
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })()}
@@ -413,3 +446,4 @@ export function AIScheduler() {
     </div>
   );
 }
+
