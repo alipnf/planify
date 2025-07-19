@@ -169,7 +169,10 @@ export function CourseSelectionTable() {
     );
   }
 
-  if (courses.length === 0) {
+  const isFiltering =
+    searchQuery !== '' || filterSemester !== 'all' || filterClass !== 'all';
+
+  if (courses.length === 0 && !isFiltering) {
     return (
       <Card>
         <CardContent className="text-center py-12">
@@ -301,170 +304,188 @@ export function CourseSelectionTable() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {groupedCourses.map((semesterGroup) => (
-                  <React.Fragment key={semesterGroup.semester}>
-                    {/* Semester header row */}
-                    <TableRow
-                      className="bg-gray-100 border-b-2 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => toggleSemester(semesterGroup.semester)}
-                    >
-                      <TableCell colSpan={11}>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                          >
-                            {expandedSemesters.has(semesterGroup.semester) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <span className="font-bold text-xl">
-                            Semester {semesterGroup.semester}
-                          </span>
-                          <Badge variant="secondary">
-                            {semesterGroup.totalCourses} kelas dalam{' '}
-                            {semesterGroup.codeGroups.length} mata kuliah
-                          </Badge>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-
-                    {/* Code groups within semester */}
-                    {expandedSemesters.has(semesterGroup.semester) &&
-                      semesterGroup.codeGroups.map((group) => {
-                        const groupKey = `${semesterGroup.semester}-${group.code}`;
-                        const isExpanded = expandedGroups.has(groupKey);
-
-                        return (
-                          <React.Fragment key={group.code}>
-                            {/* Code group header row */}
-                            <TableRow
-                              className="bg-gray-50 cursor-pointer border-b-2 hover:bg-gray-50"
-                              onClick={() =>
-                                toggleGroup(semesterGroup.semester, group.code)
-                              }
+                {groupedCourses.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={11}>
+                      <div className="text-center py-12">
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          Tidak ada mata kuliah ditemukan
+                        </h3>
+                        <p className="text-gray-500">
+                          Coba ubah filter atau kata kunci pencarian Anda.
+                        </p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  groupedCourses.map((semesterGroup) => (
+                    <React.Fragment key={semesterGroup.semester}>
+                      {/* Semester header row */}
+                      <TableRow
+                        className="bg-gray-100 border-b-2 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => toggleSemester(semesterGroup.semester)}
+                      >
+                        <TableCell colSpan={11}>
+                          <div className="flex items-center gap-3">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
                             >
-                              <TableCell>
-                                <div className="flex items-center justify-center">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 p-0"
-                                  >
-                                    {isExpanded ? (
-                                      <ChevronDown className="h-4 w-4" />
-                                    ) : (
-                                      <ChevronRight className="h-4 w-4" />
-                                    )}
-                                  </Button>
-                                </div>
-                              </TableCell>
-                              <TableCell colSpan={10}>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <span className="font-semibold text-lg">
-                                      {group.code}
-                                    </span>
-                                    <Badge variant="secondary">
-                                      {group.totalClasses} kelas
-                                    </Badge>
-                                    <span className="text-sm text-gray-600">
-                                      {group.courses[0]?.name}
-                                    </span>
+                              {expandedSemesters.has(semesterGroup.semester) ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <span className="font-bold text-xl">
+                              Semester {semesterGroup.semester}
+                            </span>
+                            <Badge variant="secondary">
+                              {semesterGroup.totalCourses} kelas dalam{' '}
+                              {semesterGroup.codeGroups.length} mata kuliah
+                            </Badge>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+
+                      {/* Code groups within semester */}
+                      {expandedSemesters.has(semesterGroup.semester) &&
+                        semesterGroup.codeGroups.map((group) => {
+                          const groupKey = `${semesterGroup.semester}-${group.code}`;
+                          const isExpanded = expandedGroups.has(groupKey);
+
+                          return (
+                            <React.Fragment key={group.code}>
+                              {/* Code group header row */}
+                              <TableRow
+                                className="bg-gray-50 cursor-pointer border-b-2 hover:bg-gray-50"
+                                onClick={() =>
+                                  toggleGroup(
+                                    semesterGroup.semester,
+                                    group.code
+                                  )
+                                }
+                              >
+                                <TableCell>
+                                  <div className="flex items-center justify-center">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      {isExpanded ? (
+                                        <ChevronDown className="h-4 w-4" />
+                                      ) : (
+                                        <ChevronRight className="h-4 w-4" />
+                                      )}
+                                    </Button>
                                   </div>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-
-                            {/* Group courses (when expanded) */}
-                            {isExpanded &&
-                              group.courses.map((course: Course) => {
-                                const courseSelected = isSelected(course);
-                                const courseConflicted = isConflicted(course);
-
-                                return (
-                                  <TableRow
-                                    key={course.id}
-                                    className={`${
-                                      courseSelected
-                                        ? courseConflicted
-                                          ? 'bg-red-200 hover:bg-red-200'
-                                          : 'bg-blue-200 hover:bg-blue-200'
-                                        : 'hover:bg-transparent'
-                                    } cursor-pointer`}
-                                    onClick={() => toggleCourse(course)}
-                                  >
-                                    <TableCell>
-                                      <div className="flex items-center justify-center"></div>
-                                    </TableCell>
-                                    <TableCell className="font-medium">
-                                      <div>{course.code}</div>
-                                    </TableCell>
-                                    <TableCell className="font-medium">
-                                      <div>{course.class}</div>
-                                    </TableCell>
-                                    <TableCell className="whitespace-normal align-middle">
-                                      <div className="font-medium max-w-[200px] lg:max-w-[300px]">
-                                        {course.name}
-                                      </div>
-                                    </TableCell>
-                                    <TableCell className="whitespace-normal align-middle">
-                                      <div className="max-w-[150px] lg:max-w-[200px]">
-                                        {course.lecturer}
-                                      </div>
-                                    </TableCell>
-                                    <TableCell>
-                                      <Badge variant="outline">
-                                        {course.credits} SKS
+                                </TableCell>
+                                <TableCell colSpan={10}>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <span className="font-semibold text-lg">
+                                        {group.code}
+                                      </span>
+                                      <Badge variant="secondary">
+                                        {group.totalClasses} kelas
                                       </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="text-sm">
-                                        <div>{course.day}</div>
-                                        <div className="text-gray-500">
-                                          {formatTimeRange(
-                                            course.startTime,
-                                            course.endTime
-                                          )}
+                                      <span className="text-sm text-gray-600">
+                                        {group.courses[0]?.name}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+
+                              {/* Group courses (when expanded) */}
+                              {isExpanded &&
+                                group.courses.map((course: Course) => {
+                                  const courseSelected = isSelected(course);
+                                  const courseConflicted = isConflicted(course);
+
+                                  return (
+                                    <TableRow
+                                      key={course.id}
+                                      className={`${
+                                        courseSelected
+                                          ? courseConflicted
+                                            ? 'bg-red-200 hover:bg-red-200'
+                                            : 'bg-blue-200 hover:bg-blue-200'
+                                          : 'hover:bg-transparent'
+                                      } cursor-pointer`}
+                                      onClick={() => toggleCourse(course)}
+                                    >
+                                      <TableCell>
+                                        <div className="flex items-center justify-center"></div>
+                                      </TableCell>
+                                      <TableCell className="font-medium">
+                                        <div>{course.code}</div>
+                                      </TableCell>
+                                      <TableCell className="font-medium">
+                                        <div>{course.class}</div>
+                                      </TableCell>
+                                      <TableCell className="whitespace-normal align-middle">
+                                        <div className="font-medium max-w-[200px] lg:max-w-[300px]">
+                                          {course.name}
                                         </div>
-                                      </div>
-                                    </TableCell>
-                                    <TableCell>{course.room}</TableCell>
-                                    <TableCell>
-                                      <CategoryBadge
-                                        category={course.category}
-                                      />
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="flex items-center justify-center">
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-8 w-8 p-0"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            toggleCourse(course);
-                                          }}
-                                        >
-                                          {courseSelected ? (
-                                            <Minus className="h-4 w-4" />
-                                          ) : (
-                                            <Plus className="h-4 w-4" />
-                                          )}
-                                        </Button>
-                                      </div>
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              })}
-                          </React.Fragment>
-                        );
-                      })}
-                  </React.Fragment>
-                ))}
+                                      </TableCell>
+                                      <TableCell className="whitespace-normal align-middle">
+                                        <div className="max-w-[150px] lg:max-w-[200px]">
+                                          {course.lecturer}
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge variant="outline">
+                                          {course.credits} SKS
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="text-sm">
+                                          <div>{course.day}</div>
+                                          <div className="text-gray-500">
+                                            {formatTimeRange(
+                                              course.startTime,
+                                              course.endTime
+                                            )}
+                                          </div>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>{course.room}</TableCell>
+                                      <TableCell>
+                                        <CategoryBadge
+                                          category={course.category}
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="flex items-center justify-center">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              toggleCourse(course);
+                                            }}
+                                          >
+                                            {courseSelected ? (
+                                              <Minus className="h-4 w-4" />
+                                            ) : (
+                                              <Plus className="h-4 w-4" />
+                                            )}
+                                          </Button>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                            </React.Fragment>
+                          );
+                        })}
+                    </React.Fragment>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
