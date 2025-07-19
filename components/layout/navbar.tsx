@@ -2,7 +2,15 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { BookOpen, Save, LogOut, Menu, Plus, Settings, BellRing } from 'lucide-react';
+import {
+  BookOpen,
+  Save,
+  LogOut,
+  Menu,
+  Plus,
+  Settings,
+  BellRing,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -59,7 +67,7 @@ export function Navbar() {
 
   return (
     <>
-      <header className="bg-background/80 backdrop-blur border-b sticky top-0 z-50">
+      <header className="bg-background border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center space-x-2">
@@ -138,17 +146,16 @@ export function Navbar() {
                         </>
                       ) : (
                         <>
-                          <DropdownMenuItem disabled>
+                          <DropdownMenuItem>
                             <div className="flex flex-col space-y-1">
                               <p className="text-sm font-medium leading-none">
                                 {user?.user_metadata?.full_name || user?.email}
                               </p>
-                              <p className="text-xs leading-none text-muted-foreground">
+                              <p className="text-xs leading-none text-foreground">
                                 {user?.email}
                               </p>
                             </div>
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => router.push('/settings')}
                           >
@@ -207,7 +214,7 @@ export function Navbar() {
                       </DropdownMenuItem>
                     ) : isAuthenticated ? (
                       <>
-                        <DropdownMenuItem disabled>
+                        <DropdownMenuItem>
                           <div className="flex items-center space-x-2 w-full">
                             <Avatar className="h-6 w-6">
                               <AvatarImage
@@ -221,12 +228,11 @@ export function Navbar() {
                                   'U'}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="text-sm">
+                            <span className="text-sm text-foreground">
                               {user?.user_metadata?.full_name || user?.email}
                             </span>
                           </div>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
                         {navigation.map((item) => {
                           const Icon = item.icon;
                           const isActive = pathname === item.href;
@@ -238,7 +244,7 @@ export function Navbar() {
                                   'w-full flex items-center space-x-2',
                                   isActive
                                     ? 'text-primary bg-primary/10'
-                                    : 'text-muted-foreground'
+                                    : 'text-foreground'
                                 )}
                               >
                                 <Icon className="h-4 w-4" />
@@ -247,7 +253,6 @@ export function Navbar() {
                             </DropdownMenuItem>
                           );
                         })}
-                        <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
                           <Link
                             href="/settings"
@@ -255,7 +260,7 @@ export function Navbar() {
                               'w-full flex items-center space-x-2',
                               pathname === '/settings'
                                 ? 'text-primary bg-primary/10'
-                                : 'text-muted-foreground'
+                                : 'text-foreground'
                             )}
                           >
                             <Settings className="h-4 w-4" />
@@ -269,7 +274,7 @@ export function Navbar() {
                               'w-full flex items-center space-x-2',
                               pathname === '/announcement'
                                 ? 'text-primary bg-primary/10'
-                                : 'text-muted-foreground'
+                                : 'text-foreground'
                             )}
                           >
                             <BellRing className="h-4 w-4" />
@@ -287,12 +292,18 @@ export function Navbar() {
                     ) : (
                       <>
                         <DropdownMenuItem asChild>
-                          <Link href="/auth/login" className="w-full">
+                          <Link
+                            href="/auth/login"
+                            className="w-full text-foreground"
+                          >
                             Masuk
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href="/auth/register" className="w-full">
+                          <Link
+                            href="/auth/register"
+                            className="w-full text-foreground"
+                          >
                             Daftar
                           </Link>
                         </DropdownMenuItem>

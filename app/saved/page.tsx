@@ -62,15 +62,18 @@ export default function SavedSchedulesPage() {
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Jadwal Tersimpan</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Jadwal Tersimpan</h1>
           <p className="text-gray-600">
             Lihat, kelola, dan bagikan jadwal yang telah Anda simpan.
           </p>
         </div>
         <div>
-          <Button onClick={() => setShowImportDialog(true)}>
+          <Button
+            onClick={() => setShowImportDialog(true)}
+            className="w-full sm:w-auto"
+          >
             <Download className="h-4 w-4 mr-2" />
             Impor Jadwal
           </Button>
