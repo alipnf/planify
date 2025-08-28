@@ -90,10 +90,23 @@ export function CourseModal() {
     };
 
     await handleSaveCourse(transformedData);
+
+    // Reset form setelah berhasil menyimpan
+    if (!editingCourse) {
+      reset();
+    }
   };
 
   return (
-    <Dialog open={showCourseModal} onOpenChange={setShowCourseModal}>
+    <Dialog
+      open={showCourseModal}
+      onOpenChange={(open) => {
+        if (!open) {
+          reset();
+        }
+        setShowCourseModal(open);
+      }}
+    >
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
