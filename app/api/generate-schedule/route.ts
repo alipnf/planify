@@ -33,7 +33,7 @@ Response Anda HARUS HANYA JSON, tanpa teks atau markup lain.`;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-pro',
+      model: 'gemini-2.5-flash',
       contents: prompt,
     });
     const text = response.text ?? '';
